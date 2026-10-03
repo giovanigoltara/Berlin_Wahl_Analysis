@@ -14,7 +14,7 @@ define todo
 	@echo "Not implemented yet: $(1)" >&2; exit 1
 endef
 
-.PHONY: help setup env db-up db-check db-down db-reset download inspect load osm gee analysis maps all clean
+.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation osm gee analysis maps all clean
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -48,13 +48,16 @@ inspect: download ## Phase 1: inspect raw sources, write docs/validation_report.
 load: db-up inspect ## Phase 2: load sources into PostGIS, build clean tables, run checks
 	$(PY) src/load_postgis.py
 
+allocation: load ## Phase 2: allocate postal votes to station districts (methods A, B, C)
+	$(PY) src/run_sql.py allocation
+
 osm: ## Phase 2: extract OSM amenities
 	$(call todo,Phase 2 src/osm_extract.py)
 
 gee: load ## Phase 3: Earth Engine composites and zonal statistics
 	$(call todo,Phase 3 src/gee_extract.py)
 
-analysis: load osm gee ## Phase 4: indicator table and statistics
+analysis: allocation osm gee ## Phase 4: indicator table and statistics
 	$(call todo,Phase 4 sql/50_indicators.sql and src/analysis.py)
 
 maps: analysis ## Phase 5: publication figures
