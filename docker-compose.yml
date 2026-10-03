@@ -1,0 +1,26 @@
+services:
+  db:
+    # Pinned by digest so every run uses the same PostgreSQL, PostGIS, GEOS and PROJ builds.
+    image: postgis/postgis:18-3.6@sha256:60f6ad1d21ea86a67d47780b9a0d1e1d200500f62b19293fa834d0dea80b8677
+    container_name: hgv-postgis
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hgv}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hgv}
+      POSTGRES_DB: ${POSTGRES_DB:-hgv}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18 images keep PGDATA in a versioned subfolder of /var/lib/postgresql.
+      - pgdata:/var/lib/postgresql
+      # SQL files are mounted read-only so `make` can run them inside the container.
+      - ./sql:/sql:ro
+    healthcheck:
+      # -h 127.0.0.1: the temporary init server listens on the Unix socket only, so this
+      # check stays unhealthy until the image has finished creating the PostGIS extension.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:
