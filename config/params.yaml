@@ -17,12 +17,33 @@ paths:
   figures: "figures"
   manifest: "data/raw/manifest.csv"
 
-# Source URLs are landing pages from the brief. Direct file URLs are resolved and recorded in
-# Phase 1 after inspection, not guessed here.
+# Sources fetched by src/download.py. Direct URLs were resolved and inspected in Phase 1.
+# licence_as_stated is copied verbatim from the provider; licence_where says where it was read.
 sources:
-  election_results: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"
-  district_geometries: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
-  population_density: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
+  election_results:
+    landing_page: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"
+    licence_as_stated: "CC BY 3.0 DE"
+    licence_where: "Field 'Lizenz' in DSB_Datenexport_AGH2026_Zweitstimme_W_BE.csv"
+    files:
+      results_w: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/Datenexport_AGH2026_Zweitstimme_W_BE.csv"
+      results_w_dsb: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/DSB/DSB_Datenexport_AGH2026_Zweitstimme_W_BE.csv"
+      results_a: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/Datenexport_AGH2026_Zweitstimme_A_BE.csv"
+      results_a_dsb: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/DSB/DSB_Datenexport_AGH2026_Zweitstimme_A_BE.csv"
+  district_geometries:
+    landing_page: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
+    licence_as_stated: "Creative Commons Attribution (cc-by)"
+    licence_where: "daten.berlin.de dataset page, field 'Lizenz' (version not stated there; to be checked in the PDF)"
+    files:
+      geometries_uwb: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_UWB_AH26.zip"
+      geometries_doc: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf"
+  population_density:
+    landing_page: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
+    licence_as_stated: "Der Datenbestand wird unter der Lizenz CC-BY-3.0-Namensnennung veröffentlicht (vgl. https://creativecommons.org/licenses/by/3.0/de/). Der Quellenvermerk gemäß Abschnitt 3a der Lizenz lautet \"Amt für Statistik Berlin-Brandenburg / Einwohnerdichte 2025 (Umweltatlas)\"."
+    licence_where: "WFS GetCapabilities, ows:AccessConstraints"
+    files:
+      # Single request: the server's CountDefault (1,000,000) exceeds the 26,613 features.
+      population_blocks: "https://gdi.berlin.de/services/wfs/ua_einwohnerdichte_2025?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=ua_einwohnerdichte_2025:ua_einwohnerdichte_2025"
+      population_capabilities: "https://gdi.berlin.de/services/wfs/ua_einwohnerdichte_2025?SERVICE=WFS&REQUEST=GetCapabilities"
 
 imagery:
   years: [2023, 2024, 2025]
