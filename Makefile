@@ -39,8 +39,8 @@ db-down: ## Stop PostGIS (data volume kept)
 db-reset: ## Stop PostGIS and delete its data volume
 	docker compose down -v
 
-download: ## Phase 1: fetch institutional sources into data/raw
-	$(call todo,Phase 1 src/download.py)
+download: ## Phase 1: fetch institutional sources into data/raw with a manifest
+	$(PY) src/download.py
 
 load: db-up download ## Phase 2: load sources into PostGIS and run sql/
 	$(call todo,Phase 2 src/load_postgis.py and sql/)
