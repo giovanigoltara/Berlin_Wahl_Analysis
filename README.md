@@ -1,6 +1,6 @@
 # Heat, green and the vote: Berlin 2026
 
-> Work in progress. Phase 0 (setup) is complete; data acquisition starts in Phase 1.
+> Work in progress. Phases 0 (setup) and 1 (acquisition and inspection) are complete; see `docs/validation_report.md`.
 
 How do surface temperature, vegetation and access to everyday services vary across Berlin's electoral districts, and how do these urban conditions align with party-list (Zweitstimme) results of the Abgeordnetenhaus election of 20 September 2026?
 

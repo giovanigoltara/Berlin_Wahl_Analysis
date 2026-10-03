@@ -14,7 +14,7 @@ define todo
 	@echo "Not implemented yet: $(1)" >&2; exit 1
 endef
 
-.PHONY: help setup env db-up db-check db-down db-reset download load osm gee analysis maps all clean
+.PHONY: help setup env db-up db-check db-down db-reset download inspect load osm gee analysis maps all clean
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -42,7 +42,10 @@ db-reset: ## Stop PostGIS and delete its data volume
 download: ## Phase 1: fetch institutional sources into data/raw with a manifest
 	$(PY) src/download.py
 
-load: db-up download ## Phase 2: load sources into PostGIS and run sql/
+inspect: download ## Phase 1: inspect raw sources, write docs/validation_report.md
+	$(PY) src/inspect_raw.py
+
+load: db-up inspect ## Phase 2: load sources into PostGIS and run sql/
 	$(call todo,Phase 2 src/load_postgis.py and sql/)
 
 osm: ## Phase 2: extract OSM amenities
