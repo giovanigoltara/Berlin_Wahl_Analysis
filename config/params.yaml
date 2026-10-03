@@ -23,6 +23,10 @@ sources:
   election_results: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"
   district_geometries: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
   population_density: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
+  # Verified WFS endpoint (GetCapabilities read 2026-10-03); see docs/candidate_sources_public_space.md
+  green_provision:
+    wfs: "https://gdi.berlin.de/services/wfs/ua_versorggruen_2020"
+    layer: "ua_versorggruen_2020:versorggruen_2020"
 
 imagery:
   years: [2023, 2024, 2025]
@@ -61,6 +65,19 @@ accessibility:
     - public_transport_stops
     - parks
     - playgrounds
+
+green_provision:
+  # Classes of public, near-home green space per resident (m2 per inhabitant), from the
+  # service's WMS legend. Use voeff_name, not versorg_sst: versorg_sst 1 mixes private-space classes.
+  class_field: "voeff_name"
+  classes:
+    versorgter Bereich: "> 6.0"
+    unterversorgter Bereich: "3.0 to < 6.0"
+    schlecht versorgter Bereich: "0.1 to < 3.0"
+    nicht versorgter Bereich: "<= 0.1"
+  # Indicator: population-weighted share of residents in blocks below these classes
+  undersupplied: ["unterversorgter Bereich", "schlecht versorgter Bereich", "nicht versorgter Bereich"]
+  poorly_supplied: ["schlecht versorgter Bereich", "nicht versorgter Bereich"]
 
 analysis:
   correlation: "spearman"

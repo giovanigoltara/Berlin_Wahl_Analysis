@@ -69,3 +69,27 @@ Criteria: fit to the research question (urban conditions vs vote), effort within
 **Not shortlisted, and why.** Klimabewertung (3): ordinal re-expression of the same climate model as candidate 2. Vegetation height and green volume (5): near-duplicates of NDVI. Noise (7): strong and independent signal, but 3.8 M points make it the most expensive option; the best runner-up if the budget allows. Umweltgerechtigkeit (9): too coarse (542 PLR, 3 classes) for a 2,542-district analysis, but worth one sentence in the README as an external benchmark. Street survey (10) and parking (11): ideal concepts for street space allocation, but 2014/2015 data or split schemas. Toilets, fountains, cool rooms (14 to 16): too few points per district. OSM (17): uneven completeness, not verifiable from this session.
 
 **Recommendation.** If only one indicator is added, take candidate 1. Add candidate 2 only if the LST correlation turns out below roughly 0.8, otherwise it adds little. The budget for either must come from Phase 5 slack, not from validation work.
+
+## Decision (3 October 2026): adopt candidate 1
+
+Green provision 2020 is adopted as the public-space quality indicator. Parameters are in `config/params.yaml` (`sources.green_provision`, `green_provision`).
+
+**Class thresholds (V).** Read from the WMS legend, `https://gdi.berlin.de/services/wms/ua_versorggruen_2020?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=versorggruen_2020&sld_version=1.1.0`. Unit: m² of public, near-home green space per inhabitant.
+
+| `voeff_name` | m² per inhabitant | Blocks |
+|---|---|---|
+| versorgter Bereich | > 6.0 | 7,308 |
+| unterversorgter Bereich | 3.0 to < 6.0 | 1,134 |
+| schlecht versorgter Bereich | 0.1 to < 3.0 | 1,180 |
+| nicht versorgter Bereich | ≤ 0.1 | 3,763 |
+
+The legend crosses these four classes with the share of private or semi-public open space (gering, mittel, hoch), which gives the 12 `versorg_sst` codes. **Do not use `versorg_sst`** (V): code 1 holds 4,552 "hoch", 133 "mittel" and 22 "gering" blocks, and codes 3, 6, 9 and 12 also hold "kein: alle anderen Strukturtypen". Use `voeff_name` and `vpriv_name` as two separate fields.
+
+**Indicators per UWB.**
+- `green_undersupplied_share`: share of residents (`ew2025` from `ua_einwohnerdichte_2025`) living in blocks below 6 m² per inhabitant.
+- `green_poorly_supplied_share`: same, below 3 m² per inhabitant.
+- Weighting goes through the dasymetric block intersection of Phase 2. Blocks are joined on `styp_id` = `schluessel`. The 268 provision blocks without a key match in 2025 are reported in the validation report and assigned by spatial overlay.
+
+**Known confound (U, to test).** 2,026 of the 3,763 "nicht versorgt" blocks have a high share of private open space ("hoch: aufgelockerte Siedlungsbebauung"), i.e. probably detached housing at the city edge. There, low public green provision may reflect garden ownership rather than deprivation, and it will correlate with building type and with vote. Report the indicator alongside `vpriv_name`, or restrict it to blocks with "gering" or "mittel" private open space, and check which choice changes the correlations.
+
+**Overlap with existing plan.** `accessibility.amenities` already includes `parks` (500 m from OSM). Keep both only if they are not near-duplicates: compare them in Phase 4 and drop one if Spearman ρ > 0.8.
