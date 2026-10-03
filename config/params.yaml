@@ -1,0 +1,69 @@
+# Pipeline parameters. Scripts read every tunable value from here; nothing below is hardcoded elsewhere.
+# Values marked "initial" are starting choices to be reviewed in the phase that uses them.
+
+crs:
+  working: "EPSG:25833"   # ETRS89 / UTM zone 33N, used for all metric operations
+  geographic: "EPSG:4326" # used only for Earth Engine exchange and web outputs
+
+election:
+  name: "Wahl zum Abgeordnetenhaus von Berlin"
+  date: "2026-09-20"
+  vote: "Zweitstimme"
+
+paths:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  figures: "figures"
+  manifest: "data/raw/manifest.csv"
+
+# Source URLs are landing pages from the brief. Direct file URLs are resolved and recorded in
+# Phase 1 after inspection, not guessed here.
+sources:
+  election_results: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"
+  district_geometries: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
+  population_density: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
+
+imagery:
+  years: [2023, 2024, 2025]
+  season_start: "06-01"   # inclusive, month-day
+  season_end: "09-01"     # exclusive, so June to August
+  composite: "median"
+  landsat:
+    collections:
+      - "LANDSAT/LC08/C02/T1_L2"
+      - "LANDSAT/LC09/C02/T1_L2"
+    band: "ST_B10"
+    # Collection 2 Level 2 surface temperature scaling (USGS): K = DN * scale + offset
+    st_scale: 0.00341802
+    st_offset: 149.0
+    max_scene_cloud_cover: 30  # initial; percent, applied to CLOUD_COVER property
+    # QA_PIXEL bits masked: 1 dilated cloud, 2 cirrus, 3 cloud, 4 cloud shadow
+    qa_mask_bits: [1, 2, 3, 4]
+    scale_m: 30
+  sentinel2:
+    collection: "COPERNICUS/S2_SR_HARMONIZED"
+    cloud_score_collection: "GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED"
+    cloud_score_band: "cs_cdf"
+    clear_threshold: 0.60     # initial; pixels with cs_cdf below this are masked
+    nir_band: "B8"
+    red_band: "B4"
+    scale_m: 10
+
+accessibility:
+  method: "euclidean_buffer"
+  buffer_m: 500
+  amenities:  # OSM tag mapping is defined and documented in Phase 2 after inspecting the extract
+    - schools
+    - kindergartens
+    - health      # doctors, clinics, pharmacies
+    - supermarkets
+    - public_transport_stops
+    - parks
+    - playgrounds
+
+analysis:
+  correlation: "spearman"
+  moran_weights: "queen"
+  moran_permutations: 999
+  random_seed: 20260920
