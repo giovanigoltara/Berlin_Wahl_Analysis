@@ -21,7 +21,7 @@ Licences are quoted exactly as stated by the provider.
 - Files: `RBS_OD_UWB_AH26.zip` (ESRI Shapefile, EPSG:25833), `RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf`
 - Validity: "Der Datenbestand entspricht dem abgestimmten Sachstand vom März 2026." (PDF)
 - Licence as stated: "Der Datenbestand wird unter der Lizenz CC-BY-3.0-Namensnennung veröffentlicht (vgl. https://creativecommons.org/licenses/by/3.0/de/). Als Urheber ist dabei zu nennen: Amt für Statistik Berlin-Brandenburg 2026." (PDF; the catalogue page shows only "Creative Commons Attribution (cc-by)")
-- Note: in Phase 1 the host `www.statistik-berlin-brandenburg.de` was not reachable from the build environment, so both files were downloaded in a browser and placed by hand (manifest method `manual`). The script fetches them automatically where the host is reachable.
+- Manual step: the `/opendata/...` URLs are routes of a JavaScript web app. Scripts receive an HTML page with status 200; browsers then fetch the file from `cdn0.scrvt.com`, which the build environment cannot reach. Both files were therefore downloaded in a browser on 2026-10-03 and placed in `data/raw/district_geometries/` by hand (manifest method `manual`). Their SHA-256 hashes are pinned in `config/params.yaml`, and `src/download.py` rejects any other content, including the HTML page.
 
 ### Population density 2025 (Umweltatlas)
 

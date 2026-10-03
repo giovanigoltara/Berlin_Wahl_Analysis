@@ -5,6 +5,10 @@ exists is kept and only re-hashed, so the script is idempotent; pass --force to 
 A file placed by hand (for hosts unreachable from the run environment) is accepted and recorded
 with method "manual". The manifest stores URL, timestamp, SHA-256, size and the licence as stated.
 
+Every file is checked before it is accepted: its leading bytes must match the expected format, so
+an HTML page served with status 200 in place of a file is rejected. Files with a `sha256` in
+params.yaml must also match that hash.
+
 Usage: uv run python src/download.py [--force]
 """
 
@@ -54,6 +58,25 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+# Leading bytes expected per file extension. Anything starting like HTML is always rejected.
+MAGIC = {".zip": b"PK\x03\x04", ".pdf": b"%PDF", ".gml": b"<?xml", ".xml": b"<?xml"}
+
+
+def check_content(path: Path, expected_sha256: str | None) -> str | None:
+    """Return a reason the file is not acceptable, or None if it is."""
+    head = path.open("rb").read(512).lstrip(b"\xef\xbb\xbf").lstrip()
+    if head[:15].lower().startswith((b"<!doctype html", b"<html")):
+        return "received an HTML page instead of the file"
+    magic = MAGIC.get(path.suffix.lower())
+    if magic and not head.startswith(magic):
+        return f"content does not start with {magic!r} as expected for {path.suffix}"
+    if b"ExceptionReport" in head:
+        return "server returned an OGC exception report"
+    if expected_sha256 and sha256(path) != expected_sha256:
+        return f"SHA-256 differs from the pinned value {expected_sha256[:12]}..."
+    return None
+
+
 def target_path(raw_dir: Path, source: str, file_id: str, url: str) -> Path:
     name = FILENAMES.get(file_id) or Path(urlparse(url).path).name
     return raw_dir / source / name
@@ -89,7 +112,10 @@ def main() -> int:
 
     rows, failures = [], []
     for source, spec in params["sources"].items():
-        for file_id, url in spec["files"].items():
+        for file_id, entry in spec["files"].items():
+            # An entry is a URL, or a mapping with `url` and a pinned `sha256`.
+            url = entry["url"] if isinstance(entry, dict) else entry
+            pinned = entry.get("sha256") if isinstance(entry, dict) else None
             dest = target_path(raw_dir, source, file_id, url)
             prev = previous.get(file_id, {})
             if dest.exists() and not args.force:
@@ -103,12 +129,27 @@ def main() -> int:
                         timespec="seconds"
                     )
                 )
+                if problem := check_content(dest, pinned):
+                    print(
+                        f"FAIL  {file_id:<24} {dest.relative_to(ROOT)}: {problem}", file=sys.stderr
+                    )
+                    failures.append(file_id)
+                    continue
                 print(f"keep  {file_id:<24} {dest.relative_to(ROOT)} ({method})")
             else:
                 try:
                     fetch(url, dest)
                 except requests.RequestException as e:
                     print(f"FAIL  {file_id:<24} {url}\n      {e}", file=sys.stderr)
+                    print(
+                        f"      Place the file by hand at {dest.relative_to(ROOT)} and rerun.",
+                        file=sys.stderr,
+                    )
+                    failures.append(file_id)
+                    continue
+                if problem := check_content(dest, pinned):
+                    dest.unlink()
+                    print(f"FAIL  {file_id:<24} {url}\n      {problem}", file=sys.stderr)
                     print(
                         f"      Place the file by hand at {dest.relative_to(ROOT)} and rerun.",
                         file=sys.stderr,
