@@ -77,6 +77,11 @@ imagery:
     red_band: "B4"
     scale_m: 10
 
+# Dasymetric step (sql/30_dasymetric.sql), passed to SQL as hgv.<name> settings.
+dasymetric:
+  min_block_residents: 1  # initial; blocks with fewer residents are not residential land
+  min_piece_m2: 1.0       # block-district intersections smaller than this are boundary slivers
+
 accessibility:
   method: "euclidean_buffer"
   buffer_m: 500
