@@ -17,8 +17,9 @@ SELECT uwb, bez, bwb, awk, bwk,
                      ELSE ST_CollectionExtract(ST_MakeValid(geom), 3) END)
 FROM raw.uwb_geom;
 
-INSERT INTO clean.station_result (uwb, eligible, voters, valid, invalid)
-SELECT bezirk || wahlbezirk, wberins::int, waehler::int, gueltig::int, unguelt::int
+INSERT INTO clean.station_result (uwb, eligible, wahlschein, voters, valid, invalid)
+SELECT bezirk || wahlbezirk, wberins::int, wbera2::int, waehler::int, gueltig::int,
+       unguelt::int
 FROM raw.results_w
 WHERE wbezart = 'W';
 
