@@ -45,8 +45,8 @@ download: ## Phase 1: fetch institutional sources into data/raw with a manifest
 inspect: download ## Phase 1: inspect raw sources, write docs/validation_report.md
 	$(PY) src/inspect_raw.py
 
-load: db-up inspect ## Phase 2: load sources into PostGIS and run sql/
-	$(call todo,Phase 2 src/load_postgis.py and sql/)
+load: db-up inspect ## Phase 2: load sources into PostGIS, build clean tables, run checks
+	$(PY) src/load_postgis.py
 
 osm: ## Phase 2: extract OSM amenities
 	$(call todo,Phase 2 src/osm_extract.py)
