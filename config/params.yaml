@@ -79,8 +79,36 @@ imagery:
 
 # Dasymetric step (sql/30_dasymetric.sql), passed to SQL as hgv.<name> settings.
 dasymetric:
-  min_block_residents: 1  # initial; blocks with fewer residents are not residential land
+  min_block_residents: 1  # blocks with fewer residents are not residential land
   min_piece_m2: 1.0       # block-district intersections smaller than this are boundary slivers
+  # Block types (field typklar, exact strings) never counted as residential land: open land and
+  # transport or utility infrastructure, where registered residents are caretaker flats or
+  # register artefacts. Residents there still count in district totals.
+  excluded_block_types:
+    - "Wald"
+    - "Gewässer"
+    - "Landwirtschaft"
+    - "Brachfläche"
+    - "Baustelle"
+    - "Park / Grünfläche"
+    - "Friedhof"
+    - "Stadtplatz / Promenade"
+    - "Kleingartenanlage"
+    - "Wochenendhaus- und kleingartenähnliches Gebiet"
+    - "Baumschule / Gartenbau"
+    - "Campingplatz"
+    - "Sportanlage, ungedeckt"
+    - "Sportanlage, gedeckt"
+    - "Parkplatz"
+    - "Gleiskörper"
+    - "Bahnhof und Bahnanlagen ohne Gleiskörper"
+    - "sonstige Verkehrsfläche"
+    - "Ver- und Entsorgung"
+  # Station districts allowed to have no residential land. Both lie on a Spandau site that the
+  # 2025 blocks show as industrial land (0 and 13 residents), while the 2026 register lists 104
+  # and 85 eligible voters: housing occupied after the population snapshot. Any other district
+  # without residential land fails the run.
+  known_no_residential_land: ["05334", "05335"]
 
 accessibility:
   method: "euclidean_buffer"

@@ -25,10 +25,15 @@ Outputs: `analysis.postal_weight`, `analysis.district_votes` (long, one row per 
 
 Station districts include water, forest, allotments and industry. To describe the places where people live, indicators are computed over residential land, taken from the Umweltatlas population blocks 2025.
 
-1. Each block is intersected with the station districts. A block inside one district is kept whole; a block split by a district boundary is clipped, and its residents are divided by area share. Pieces smaller than `dasymetric.min_piece_m2` are boundary slivers and are dropped.
-2. A block is residential if it has at least `dasymetric.min_block_residents` residents. Residential land per district is the union of its residential pieces (`analysis.district_population.residential_geom`), used later as the mask for satellite and accessibility indicators.
-3. Per district: residents, residential area, gross density (residents per ha of district) and residential density (residents per ha of residential land).
+1. Each block is intersected with the station districts. A block inside one district is kept whole; a block split by a district boundary is clipped, and its residents are divided by area share. 4,907 blocks holding 26 % of residents are split this way. Pieces smaller than `dasymetric.min_piece_m2` are boundary slivers and are dropped.
+2. Area shares are normalised by the part of each block inside the district coverage. 124 populated blocks on Berlin's outer boundary overhang the district coverage by up to 207 m2 (1.2 % of a block), a digitisation mismatch between the two sources; normalising keeps their residents, so the district totals equal the block total of 3,913,505 exactly.
+3. A block is residential if it has at least `dasymetric.min_block_residents` residents and its block type is not listed in `dasymetric.excluded_block_types`. The 19 excluded types are open land (forest, water, parks, cemeteries, allotments, weekend-house areas, sports grounds, wasteland) and transport or utility infrastructure, where registered residents are caretaker flats or register artefacts. Built types, including commercial, mixed and institutional blocks, stay residential when people live there. Residents of excluded blocks (28,593, 0.73 %) still count in district residents but not in residential density. Residential land per district is the union of its residential pieces (`analysis.district_population.residential_geom`), used later as the mask for satellite and accessibility indicators.
+4. Per district: residents, residents of residential blocks, residential area, gross density (residents per ha of district) and residential density (residential residents per ha of residential land).
 
-Blocks exclude street space, so residential land excludes streets. Residents date from 2025 and eligible voters from the 2026 register; their ratio per district is reported as a consistency check.
+Blocks exclude street space, so residential land excludes streets.
+
+### Population and register mismatch
+
+Residents date from 2025 and eligible voters from the 2026 register. Across Berlin, eligible voters are 0.64 of residents (median district 0.66), as expected with minors and non-citizens excluded. In 15 districts (0.48 % of eligible voters) eligible voters exceed residents or there is no residential land; these carry `population_mismatch = true`, and Phase 4 reports results with and without them. The extreme case is a Spandau site that the 2025 blocks show as industrial land while the 2026 register lists 189 eligible voters in districts 05334 and 05335, consistent with housing occupied after the population snapshot. Districts allowed to lack residential land are listed in `dasymetric.known_no_residential_land`; any other such district fails the run.
 
 Outputs: `analysis.block_piece`, `analysis.district_population`.
