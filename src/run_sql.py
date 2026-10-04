@@ -65,7 +65,7 @@ def write_report(section_title: str, source: str, rows: list[tuple]) -> bool:
     if section_title in text:
         before, after = text.split(section_title, 1)
         nxt = after.find("\n## ")
-        text = before + section + (after[nxt + 1 :] if nxt >= 0 else "")
+        text = before + section + ("\n" + after[nxt + 1 :] if nxt >= 0 else "")
     else:
         text = text.rstrip() + "\n\n" + section
     REPORT.write_text(text, encoding="utf-8")
@@ -83,9 +83,12 @@ def main() -> int:
 
     with psycopg.connect(dsn()) as conn:
         for name, value in settings.items():
+            # Lists are passed '|'-separated; SQL splits them with string_to_array.
+            text = "|".join(map(str, value)) if isinstance(value, list) else str(value)
             # set_config is parameterised; SET does not accept bind parameters.
-            conn.execute("SELECT set_config(%s, %s, false)", (f"hgv.{name}", str(value)))
-            print(f"set   hgv.{name} = {value}")
+            conn.execute("SELECT set_config(%s, %s, false)", (f"hgv.{name}", text))
+            shown = f"{len(value)} values" if isinstance(value, list) else text
+            print(f"set   hgv.{name} = {shown}")
         print(f"sql   {sql_file}")
         conn.execute((SQL / sql_file).read_text(encoding="utf-8"))
         conn.commit()
