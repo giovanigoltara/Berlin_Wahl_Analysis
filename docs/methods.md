@@ -37,3 +37,30 @@ Blocks exclude street space, so residential land excludes streets.
 Residents date from 2025 and eligible voters from the 2026 register. Across Berlin, eligible voters are 0.64 of residents (median district 0.66), as expected with minors and non-citizens excluded. In 15 districts (0.48 % of eligible voters) eligible voters exceed residents or there is no residential land; these carry `population_mismatch = true`, and Phase 4 reports results with and without them. The extreme case is a Spandau site that the 2025 blocks show as industrial land while the 2026 register lists 189 eligible voters in districts 05334 and 05335, consistent with housing occupied after the population snapshot. Districts allowed to lack residential land are listed in `dasymetric.known_no_residential_land`; any other such district fails the run.
 
 Outputs: `analysis.block_piece`, `analysis.district_population`.
+
+## OSM accessibility (`src/osm_extract.py`, `sql/40_accessibility.sql`)
+
+Amenities come from the Geofabrik Berlin extract of 2026-10-03 (see `docs/provenance.md`). `src/osm_extract.py` reads nodes (GDAL layer `points`) and areas (closed ways and multipolygon relations, layer `multipolygons`), and assigns each feature to every category whose tags it matches, using the mapping in `config/params.yaml`:
+
+| Category | OSM tags | Rows |
+| --- | --- | --- |
+| schools | `amenity=school` | 1,089 |
+| kindergartens | `amenity=kindergarten` | 2,395 |
+| health | `amenity=doctors, clinic, hospital, pharmacy`; `healthcare=doctor, clinic, hospital, pharmacy, centre` | 2,586 |
+| supermarkets | `shop=supermarket` | 1,400 |
+| public_transport_stops | `highway=bus_stop`; `railway=station, halt, tram_stop`; `public_transport=station` | 7,829 |
+| parks | `leisure=park` | 2,714 |
+| playgrounds | `leisure=playground` | 4,753 |
+
+The mapping was fixed after counting candidate tags in the extract. Health covers general practice and pharmacies; dentists, therapists and alternative medicine are left out. Transit uses boarding points; `stop_position` and `platform` features would duplicate them. Convenience stores are not supermarkets. Features tagged `access=private` or `access=no` are dropped (928 rows, mostly playgrounds in residential courtyards). A feature mapped both as a node and as an area can appear twice; this does not affect the measures below, which depend on the nearest amenity only.
+
+In PostGIS, amenities are transformed to EPSG:25833 and validated. Areas keep their shape, so distance is measured to their edge rather than their centroid. Two measures per district and category, both over residential land and weighted by residents:
+
+1. **Share within reach**: buffers of `accessibility.buffer_m` (500 m, straight line) are dissolved per category and subdivided for indexing. Each residential block piece contributes its residents times the share of its area inside the catchment.
+2. **Mean distance to the nearest amenity**: distance from a point on the surface of each residential block piece to the nearest amenity (index-assisted nearest-neighbour search), averaged with residents as weights.
+
+The second measure was added after the first proved saturated: at 500 m the median district is fully covered in every category, and 84 % to 88 % of districts are fully covered for parks, playgrounds and transit. Mean nearest distance keeps the spread (for supermarkets, 126 m to 572 m from the 10th to the 90th percentile of districts) and is the better candidate for correlation analysis.
+
+Limitations: straight-line distance underestimates walking distance, most where rail lines, water or motorways separate blocks from amenities. A point on a large block piece stands in for all its residents. OSM completeness varies by category and area. The extract reaches past the state border by a margin of varying width (amenities up to 1.9 km outside, median 265 m), so services in Brandenburg are only partly counted; 5.9 % of residential residents live within 500 m of the border.
+
+Outputs: `analysis.amenity`, `analysis.amenity_catchment`, `analysis.piece_access`, `analysis.district_access` (residents, residents covered, share and mean nearest distance per district and category).

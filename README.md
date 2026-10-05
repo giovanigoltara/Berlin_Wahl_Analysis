@@ -1,6 +1,6 @@
 # Heat, green and the vote: Berlin 2026
 
-> Work in progress. Phases 0 (setup) and 1 (acquisition and inspection) are complete. Phase 2 has the PostGIS load, postal vote allocation and dasymetric population; OSM accessibility is next. See `docs/validation_report.md` and `docs/methods.md`.
+> Work in progress. Phases 0 (setup) and 1 (acquisition and inspection) are complete. Phase 2 (PostGIS load, postal vote allocation, dasymetric population, OSM accessibility) is complete; Earth Engine (Phase 3) is next. See `docs/validation_report.md` and `docs/methods.md`.
 
 How do surface temperature, vegetation and access to everyday services vary across Berlin's electoral districts, and how do these urban conditions align with party-list (Zweitstimme) results of the Abgeordnetenhaus election of 20 September 2026?
 

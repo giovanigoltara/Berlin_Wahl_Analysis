@@ -36,6 +36,12 @@ STEPS = {
         "## Phase 2c: dasymetric population",
         "dasymetric",
     ),
+    "accessibility": (
+        "40_accessibility.sql",
+        "analysis.accessibility_check",
+        "## Phase 2d: OSM accessibility",
+        "accessibility",
+    ),
 }
 
 
@@ -83,7 +89,10 @@ def main() -> int:
 
     with psycopg.connect(dsn()) as conn:
         for name, value in settings.items():
-            # Lists are passed '|'-separated; SQL splits them with string_to_array.
+            # Lists, and the keys of mappings, are passed '|'-separated; SQL splits them with
+            # string_to_array.
+            if isinstance(value, dict):
+                value = list(value)
             text = "|".join(map(str, value)) if isinstance(value, list) else str(value)
             # set_config is parameterised; SET does not accept bind parameters.
             conn.execute("SELECT set_config(%s, %s, false)", (f"hgv.{name}", text))
