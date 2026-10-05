@@ -30,7 +30,14 @@ def _service_account_key() -> dict | None:
             raw = base64.b64decode(raw, validate=True).decode("utf-8")
         except (binascii.Error, UnicodeDecodeError) as e:
             raise SystemExit("EE_SERVICE_ACCOUNT_KEY is neither JSON nor base64 of JSON") from e
-    key = json.loads(raw)
+    try:
+        key = json.loads(raw)
+    except json.JSONDecodeError as e:
+        # Never echo the key; position and length are enough to spot a truncated copy.
+        raise SystemExit(
+            f"EE_SERVICE_ACCOUNT_KEY is not valid JSON ({e.msg}, character {e.pos} of "
+            f"{len(raw)}); the stored value is probably truncated, so copy the key again"
+        ) from None
     if key.get("type") != "service_account":
         raise SystemExit("EE_SERVICE_ACCOUNT_KEY is not a service-account key")
     return key
@@ -40,7 +47,10 @@ def init() -> str:
     """Initialise Earth Engine and return a description of the identity used."""
     project = os.environ.get("EE_PROJECT", "").strip()
     if not project:
-        raise SystemExit("EE_PROJECT is not set (see README, manual setup)")
+        raise SystemExit(
+            "EE_PROJECT is not set (see README, manual setup). If it is set in the environment, "
+            "check that .env does not assign it an empty value."
+        )
     key = _service_account_key()
     if key:
         creds = ee.ServiceAccountCredentials(key["client_email"], key_data=json.dumps(key))
