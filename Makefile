@@ -14,7 +14,7 @@ define todo
 	@echo "Not implemented yet: $(1)" >&2; exit 1
 endef
 
-.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility gee analysis maps all clean
+.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility ee-check gee analysis maps all clean
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -59,6 +59,9 @@ osm: db-up download ## Phase 2: extract OSM amenities into PostGIS
 
 accessibility: dasymetric osm ## Phase 2: residents within reach of amenities per district
 	$(PY) src/run_sql.py accessibility
+
+ee-check: ## Phase 3: verify Earth Engine credentials with a small test query
+	$(PY) src/ee_auth.py
 
 gee: dasymetric ## Phase 3: Earth Engine composites and zonal statistics
 	$(call todo,Phase 3 src/gee_extract.py)

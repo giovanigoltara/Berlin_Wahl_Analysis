@@ -41,6 +41,14 @@ These steps need your own accounts and cannot be scripted.
    ```
    EE_PROJECT=your-project-id
    ```
+5. Check the setup with `make ee-check`, which runs a small test query.
+
+For unattended runs (a CI job or a cloud environment) use a service account instead of step 3:
+
+1. In the same project, "IAM and admin", "Service accounts", create an account and grant it the roles "Earth Engine Resource Viewer" and "Service Usage Consumer".
+2. Create a JSON key for it ("Keys", "Add key").
+3. Set `EE_SERVICE_ACCOUNT_KEY` to the key, either the JSON itself or its base64 on one line (`base64 -w0 key.json` on Linux, `base64 -i key.json` on macOS). `src/ee_auth.py` uses it from memory and never writes it to disk.
+4. Delete the key file from your machine once it is stored, and revoke the key when the project ends.
 
 ## Repository layout
 
