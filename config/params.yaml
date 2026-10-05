@@ -152,8 +152,42 @@ accessibility:
     playgrounds:
       leisure: ["playground"]
 
+# Analysis plan (docs/methods.md, "Analysis plan"). Fixed on 2026-10-05, before any satellite
+# indicator was computed. Party codes are the column codes of the official results files.
 analysis:
   correlation: "spearman"
   moran_weights: "queen"
   moran_permutations: 999
   random_seed: 20260920
+  primary_method: "C"                      # postal allocation method for Tier 1
+  robustness_methods: ["A", "B", "S"]      # Tier 2
+  partial_control: "log_residential_density"
+  multiple_testing: "holm"                 # applied to Tier 1 only
+  alpha: 0.05
+  robust_max_rho_change: 0.10              # Tier 2: same sign and |delta rho| below this
+  parties:                                 # Zweitstimme share above 4 %
+    linke: "P04"
+    cdu: "P01"
+    afd: "P05"
+    gruene: "P03"
+    spd: "P02"
+    bsw: "P24"
+  # Ideological contrast, not a coalition: share(left) minus share(right) per district.
+  contrast:
+    left: ["P04", "P03"]
+    right: ["P01", "P05"]
+  contrast_with_spd:                       # Tier 2 variant
+    left: ["P04", "P03", "P02"]
+    right: ["P01", "P05"]
+  tier1:
+    indicators: ["lst", "ndvi", "access_index"]
+    outcomes: ["linke", "gruene", "cdu", "afd", "contrast"]
+    extra_pairs: [["lst", "turnout"]]      # 3 x 5 + 1 = 16 tests
+  tier3:
+    indicators: ["lst", "ndvi", "residential_density", "dist_health", "dist_kindergartens",
+                 "dist_parks", "dist_playgrounds", "dist_public_transport_stops",
+                 "dist_schools", "dist_supermarkets"]
+    outcomes: ["linke", "cdu", "afd", "gruene", "spd", "bsw", "turnout"]
+  # Districts whose residential mask holds fewer whole Landsat pixels than this use the whole
+  # district instead. Set in Phase 3 from the observed distribution of pixel counts.
+  min_lst_pixels: null

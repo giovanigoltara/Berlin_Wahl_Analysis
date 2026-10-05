@@ -64,3 +64,38 @@ The second measure was added after the first proved saturated: at 500 m the medi
 Limitations: straight-line distance underestimates walking distance, most where rail lines, water or motorways separate blocks from amenities. A point on a large block piece stands in for all its residents. OSM completeness varies by category and area. The extract reaches past the state border by a margin of varying width (amenities up to 1.9 km outside, median 265 m), so services in Brandenburg are only partly counted; 5.9 % of residential residents live within 500 m of the border.
 
 Outputs: `analysis.amenity`, `analysis.amenity_catchment`, `analysis.piece_access`, `analysis.district_access` (residents, residents covered, share and mean nearest distance per district and category).
+
+## Analysis plan (fixed 2026-10-05, before Phase 3)
+
+This plan was committed before any surface temperature or NDVI value was computed, so the headline tests could not be chosen after seeing results. Parameters are in `config/params.yaml` under `analysis`. The analysis is ecological: every statement is about districts, never about voters.
+
+### Variables
+
+- **Outcomes**: Zweitstimme shares of the six parties above 4 % (Linke, CDU, AfD, Grüne, SPD, BSW), turnout, and a **left-right contrast**, (Linke + Grüne) minus (CDU + AfD) share per district. The contrast summarises the main ideological divide in one variable. It describes two camps, not a coalition or a government.
+- **Indicators**: summer LST, summer NDVI, residential density, and mean nearest distance to each of the seven amenity categories. The **accessibility index** is the mean over the seven categories of the standardised (z-scored) logarithm of mean nearest distance; higher means worse access.
+
+### Control for centrality
+
+Heat, low NDVI, short distances, high density and left or green shares all rise toward the city centre, so raw correlations would largely measure that one gradient. Tier 1 therefore uses **partial Spearman correlation controlling for log residential density**. Density is taken from the project's own dasymetric step; distance to a chosen centre point was rejected as arbitrary. Raw correlations are reported alongside in Tier 2.
+
+### Tiers
+
+| Tier | Purpose | Tests | Settings |
+| --- | --- | --- | --- |
+| 1, confirmatory | Headline results | LST, NDVI and accessibility index x Linke, Grüne, CDU, AfD and the contrast (15), plus LST x turnout: 16 | Method C, partial on log density, Holm correction, alpha 0.05 |
+| 2, robustness | Stability of Tier 1 | The 16 Tier 1 pairs under methods A, B and S, without the 15 `population_mismatch` districts, as raw correlations, and with the SPD added to the left side of the contrast | A Tier 1 result is called robust only if its sign holds in every variant and rho changes by less than 0.10 |
+| 3, exploratory | Overview | 10 indicators x 7 outcomes, method C, shown as a heatmap | No p-values; labelled exploratory |
+
+Global Moran's I (queen contiguity, 999 permutations, fixed seed) is reported for every indicator and outcome as a description of spatial clustering.
+
+### Uncertainty
+
+Neighbouring districts are similar (spatial autocorrelation), which violates the independence assumption behind standard correlation p-values. Results are therefore reported as effect sizes (rho with a confidence interval); p-values are labelled as not adjusted for spatial autocorrelation and serve only to rank evidence within Tier 1.
+
+### Satellite indicators over small residential masks
+
+Residential masks exclude street space, and a 30 m Landsat pixel often straddles a block and a street. Phase 3 records the number of whole pixels inside each district's residential mask. Districts below `analysis.min_lst_pixels` use the whole district instead and are flagged; the threshold is set from the observed distribution and documented with it.
+
+### What LST measures
+
+Landsat LST is the radiative temperature of surfaces (roofs, pavement, vegetation) at the satellite overpass, about 10:30 local time, under clear skies. It is a proxy for daytime heat exposure, not air temperature, and it says nothing about night-time heat. Imagery covers the summers of 2023 to 2025, while the election took place in September 2026. Both points will be stated in the README limitations.
