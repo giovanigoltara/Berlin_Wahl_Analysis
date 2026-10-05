@@ -17,7 +17,7 @@ endef
 .PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm gee analysis maps all clean
 
 help: ## List targets
-	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
 
 env: ## Create .env from .env.example if missing
 	@test -f .env || (cp .env.example .env && echo "Created .env")
@@ -54,8 +54,8 @@ allocation: load ## Phase 2: allocate postal votes to station districts (methods
 dasymetric: load ## Phase 2: residential population and land per station district
 	$(PY) src/run_sql.py dasymetric
 
-osm: ## Phase 2: extract OSM amenities
-	$(call todo,Phase 2 src/osm_extract.py)
+osm: db-up download ## Phase 2: extract OSM amenities into PostGIS
+	$(PY) src/osm_extract.py
 
 gee: dasymetric ## Phase 3: Earth Engine composites and zonal statistics
 	$(call todo,Phase 3 src/gee_extract.py)

@@ -122,17 +122,35 @@ dasymetric:
   # without residential land fails the run.
   known_no_residential_land: ["05334", "05335"]
 
+# OSM accessibility (src/osm_extract.py, sql/40_accessibility.sql). Scalars and the category
+# names are passed to SQL as hgv.<name> settings.
 accessibility:
   method: "euclidean_buffer"
   buffer_m: 500
-  amenities:  # OSM tag mapping is defined and documented in Phase 2 after inspecting the extract
-    - schools
-    - kindergartens
-    - health      # doctors, clinics, pharmacies
-    - supermarkets
-    - public_transport_stops
-    - parks
-    - playgrounds
+  # Features tagged access=<value> are not public and are dropped (e.g. playgrounds in
+  # private courtyards).
+  exclude_access: ["private", "no"]
+  # Category: OSM key -> accepted values. A feature belongs to a category if any key matches.
+  # Points (nodes) and areas (closed ways, multipolygon relations) are both used; distance is
+  # measured to the area edge. Counts in the 2026-10-03 extract are in docs/methods.md.
+  amenities:
+    schools:
+      amenity: ["school"]
+    kindergartens:
+      amenity: ["kindergarten"]
+    health:  # general practice and pharmacy; dentists, therapists, alternative medicine excluded
+      amenity: ["doctors", "clinic", "hospital", "pharmacy"]
+      healthcare: ["doctor", "clinic", "hospital", "pharmacy", "centre"]
+    supermarkets:
+      shop: ["supermarket"]
+    public_transport_stops:  # boarding points; stop_position and platform would duplicate them
+      highway: ["bus_stop"]
+      railway: ["station", "halt", "tram_stop"]
+      public_transport: ["station"]
+    parks:
+      leisure: ["park"]
+    playgrounds:
+      leisure: ["playground"]
 
 analysis:
   correlation: "spearman"
