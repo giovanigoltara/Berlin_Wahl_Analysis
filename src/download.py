@@ -47,6 +47,8 @@ MANIFEST_FIELDS = [
 FILENAMES = {
     "population_blocks": "ua_einwohnerdichte_2025.gml",
     "population_capabilities": "ua_einwohnerdichte_2025_capabilities.xml",
+    # The release asset name carries a browser duplicate suffix; store it under Geofabrik's name.
+    "osm_extract": "berlin-261003.osm.pbf",
 }
 
 
@@ -67,6 +69,9 @@ def check_content(path: Path, expected_sha256: str | None) -> str | None:
     head = path.open("rb").read(512).lstrip(b"\xef\xbb\xbf").lstrip()
     if head[:15].lower().startswith((b"<!doctype html", b"<html")):
         return "received an HTML page instead of the file"
+    # OSM PBF: a 4-byte length, then a BlobHeader whose first field is the string "OSMHeader".
+    if path.suffix.lower() == ".pbf" and head[4:15] != b"\x0a\x09OSMHeader":
+        return "content is not an OSM PBF file"
     magic = MAGIC.get(path.suffix.lower())
     if magic and not head.startswith(magic):
         return f"content does not start with {magic!r} as expected for {path.suffix}"

@@ -50,6 +50,18 @@ sources:
       # Single request: the server's CountDefault (1,000,000) exceeds the 26,613 features.
       population_blocks: "https://gdi.berlin.de/services/wfs/ua_einwohnerdichte_2025?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=ua_einwohnerdichte_2025:ua_einwohnerdichte_2025"
       population_capabilities: "https://gdi.berlin.de/services/wfs/ua_einwohnerdichte_2025?SERVICE=WFS&REQUEST=GetCapabilities"
+  osm:
+    landing_page: "https://download.geofabrik.de/europe/germany/berlin.html"
+    licence_as_stated: "License: ODbL 1.0. Data processed by Geofabrik GmbH and created by OpenStreetMap Contributors"
+    licence_where: "Geofabrik Berlin download page, footer and attribution note"
+    # Geofabrik keeps daily dated files only for a few days, so the unmodified extract
+    # berlin-261003.osm.pbf (replication timestamp 2026-10-03T20:20:50Z) is mirrored as an asset
+    # of this repository's release osm-berlin-2026-10-03 and pinned by hash.
+    origin_url: "https://download.geofabrik.de/europe/germany/berlin-261003.osm.pbf"
+    files:
+      osm_extract:
+        url: "https://github.com/giovanigoltara/Berlin_Wahl_Analysis/releases/download/osm-berlin-2026-10-03/berlin-261003.osm.1.pbf"
+        sha256: "732546ad128dea41ebd68c26b9c52c845baa7f2b50cd9816dd193604bb3c20f0"
 
 imagery:
   years: [2023, 2024, 2025]
