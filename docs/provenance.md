@@ -30,6 +30,18 @@ Licences are quoted exactly as stated by the provider.
 - Service: WFS 2.0.0 <https://gdi.berlin.de/services/wfs/ua_einwohnerdichte_2025>, layer `ua_einwohnerdichte_2025:ua_einwohnerdichte_2025`, EPSG:25833, GML 3.2, 26,613 features, fetched in one GetFeature request
 - Licence as stated: "Der Datenbestand wird unter der Lizenz CC-BY-3.0-Namensnennung veröffentlicht (vgl. https://creativecommons.org/licenses/by/3.0/de/). Der Quellenvermerk gemäß Abschnitt 3a der Lizenz lautet "Amt für Statistik Berlin-Brandenburg / Einwohnerdichte 2025 (Umweltatlas)"." (WFS GetCapabilities, `ows:AccessConstraints`)
 
+## OpenStreetMap
+
+### Berlin extract (Geofabrik)
+
+- Provider: Geofabrik GmbH, from OpenStreetMap
+- Landing page: <https://download.geofabrik.de/europe/germany/berlin.html>
+- Origin file: <https://download.geofabrik.de/europe/germany/berlin-261003.osm.pbf> (Geofabrik's dated copy of `berlin-latest.osm.pbf`)
+- Extract time: replication timestamp 2026-10-03T20:20:50Z, read from the PBF header by `src/osm_extract.py` (written by osmium/1.16.0, replication base URL `https://download.geofabrik.de/europe/germany/berlin-updates`); the landing page showed the same timestamp
+- Licence as stated: "License: ODbL 1.0" (page footer), with the attribution "Data processed by Geofabrik GmbH and created by OpenStreetMap Contributors"
+- Mirror: Geofabrik keeps daily dated files only for a few days, and its host was unreachable from the build environment. The unmodified file is therefore mirrored as the asset `berlin-261003.osm.1.pbf` of this repository's release [`osm-berlin-2026-10-03`](https://github.com/giovanigoltara/Berlin_Wahl_Analysis/releases/tag/osm-berlin-2026-10-03), which `config/params.yaml` points to with its SHA-256 pinned. `src/download.py` stores it as `data/raw/osm/berlin-261003.osm.pbf`. Redistribution of the unmodified extract follows ODbL 1.0 with the attribution above.
+- Derived data (`analysis.amenity` and the accessibility tables) is a Produced Work from the ODbL database; the tag mapping that selects it is in `config/params.yaml` under `accessibility.amenities`.
+
 ## Phase 1 snapshot (2026-10-03)
 
 | File | Method | SHA-256 |
@@ -42,10 +54,10 @@ Licences are quoted exactly as stated by the provider.
 | `district_geometries/RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf` | manual | `9e40a1fa8397d585b8bff2bee4275c969ebdcbef30c815052c750322c9bfad9d` |
 | `population_density/ua_einwohnerdichte_2025.gml` | download | `8e49df147f0ebae8ab850e39f5e977ffdeeeccce60f3d8d93e884fb3608e2c54` |
 | `population_density/ua_einwohnerdichte_2025_capabilities.xml` | download | `2faee4ab3ed28e274825fcb39fa17b4587c904651ac369f4f6fe0939cb5b958b` |
+| `osm/berlin-261003.osm.pbf` (added 2026-10-05) | manual, from the release asset | `732546ad128dea41ebd68c26b9c52c845baa7f2b50cd9816dd193604bb3c20f0` |
 
 The WFS response and its hash can change if the provider updates the service.
 
 ## Pending
 
-- OpenStreetMap extract (Phase 2): source, extract date and licence
 - Earth Engine assets, date ranges and parameters (Phase 3)

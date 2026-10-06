@@ -48,12 +48,15 @@ CREATE INDEX station_district_bwb_idx ON clean.station_district (bwb);
 -- Turnout and vote totals per station district. Eligible voters exist only here.
 CREATE TABLE clean.station_result (
     uwb       text PRIMARY KEY REFERENCES clean.station_district,
-    eligible  integer NOT NULL CHECK (eligible > 0),
-    voters    integer NOT NULL CHECK (voters BETWEEN 0 AND eligible),
-    valid     integer NOT NULL CHECK (valid >= 0),
-    invalid   integer NOT NULL CHECK (invalid >= 0),
+    eligible    integer NOT NULL CHECK (eligible > 0),
+    wahlschein  integer NOT NULL CHECK (wahlschein BETWEEN 0 AND eligible),  -- WberA2
+    voters      integer NOT NULL CHECK (voters BETWEEN 0 AND eligible),
+    valid       integer NOT NULL CHECK (valid >= 0),
+    invalid     integer NOT NULL CHECK (invalid >= 0),
     CHECK (valid + invalid <= voters)
 );
+COMMENT ON COLUMN clean.station_result.wahlschein IS
+    'WberA2: eligible voters in the register holding a Wahlschein (postal ballot documents).';
 
 -- Totals per postal district (postal rows report no eligible voters).
 CREATE TABLE clean.postal_result (
