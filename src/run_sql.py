@@ -42,6 +42,12 @@ STEPS = {
         "## Phase 2d: OSM accessibility",
         "accessibility",
     ),
+    "satellite": (
+        "35_satellite.sql",
+        "analysis.satellite_check",
+        "## Phase 3: Earth Engine satellite indicators",
+        "imagery",
+    ),
 }
 
 

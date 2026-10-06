@@ -65,6 +65,24 @@ Limitations: straight-line distance underestimates walking distance, most where 
 
 Outputs: `analysis.amenity`, `analysis.amenity_catchment`, `analysis.piece_access`, `analysis.district_access` (residents, residents covered, share and mean nearest distance per district and category).
 
+## Satellite indicators (`src/gee_extract.py`, `sql/35_satellite.sql`)
+
+Summer surface temperature and vegetation come from Google Earth Engine; the exact assets, dates, parameters and scene counts of each run are in `docs/provenance.md`.
+
+- **LST**: Landsat 8 and 9 Collection 2 Level 2, band `ST_B10`, converted with the USGS scale and offset to Kelvin and then to degrees Celsius. Pixels flagged in `QA_PIXEL` as dilated cloud, cirrus, cloud or cloud shadow, and pixels without a surface temperature (`ST_B10` = 0), are masked.
+- **NDVI**: Sentinel-2 Surface Reflectance Harmonized, (B8 - B4) / (B8 + B4), with pixels below a Cloud Score+ `cs_cdf` of 0.60 masked.
+- **Composite**: the per-pixel median of all clear observations from June to August of 2023, 2024 and 2025. Three summers smooth out a single unusual year.
+
+The Landsat scene filter (`CLOUD_COVER` <= 30) was kept after comparing it with looser thresholds over the study extent. At 30 % the 49 scenes give a median of 22 clear observations per pixel (5th percentile 11); allowing 60 % or 100 % would add 41 or 96 mostly cloudy scenes for a median of 27 or 29. Partly cloudy scenes contribute the pixels nearest to cloud edges, where undetected thin cloud and shadow lower the measured temperature, so the small gain in observations was not worth that contamination.
+
+A per-pixel median combines different days for different pixels, depending on when each was clear. With about 20 clear observations per pixel this mixes weather conditions roughly evenly across the city, but LST values are best read as relative (hotter or cooler than elsewhere in Berlin), not as the temperature of a given day.
+
+**Zonal statistics.** Each composite is reduced per station district over two zones: its residential land (see "Dasymetric population") and the whole district. Geometries are sent from PostGIS to Earth Engine as GeoJSON and reduced in EPSG:25833 on a 30 m (LST) or 10 m (NDVI) grid, with area-weighted mean and median. The **effective pixel count** is the zone's area with valid data divided by the pixel area. It is validated against the area PostGIS computes for the same zone, which tests the whole geometry transfer.
+
+**Zone choice.** Both indicators are taken over residential land, unless a district has no residential land or fewer than `imagery.min_residential_pixels` effective Landsat pixels in it; then both use the whole district, and the district is flagged `satellite_fallback`. The same zone is used for LST and NDVI, so the two always describe the same area. Mixed pixels remain: because residential land excludes streets, many pixels along its edges also contain street surface, which raises LST and lowers NDVI slightly compared with the blocks alone.
+
+Outputs: `raw.ee_zonal` (one row per district, zone and indicator), `analysis.district_satellite` (one row per district), `data/processed/ee_zonal.csv` and `ee_meta.json` (the same results, committed so later steps run without Earth Engine credentials via `make gee-from-csv`).
+
 ## Analysis plan (fixed 2026-10-05, before Phase 3)
 
 This plan was committed before any surface temperature or NDVI value was computed, so the headline tests could not be chosen after seeing results. Parameters are in `config/params.yaml` under `analysis`. The analysis is ecological: every statement is about districts, never about voters.
@@ -94,7 +112,7 @@ Neighbouring districts are similar (spatial autocorrelation), which violates the
 
 ### Satellite indicators over small residential masks
 
-Residential masks exclude street space, and a 30 m Landsat pixel often straddles a block and a street. Phase 3 records the number of whole pixels inside each district's residential mask. Districts below `analysis.min_lst_pixels` use the whole district instead and are flagged; the threshold is set from the observed distribution and documented with it.
+Residential masks exclude street space, and a 30 m Landsat pixel often straddles a block and a street. Phase 3 records the effective number of Landsat pixels in each district's residential mask (its area with valid data divided by 900 m2). Districts below `imagery.min_residential_pixels` use the whole district instead and are flagged; the threshold is set from the observed distribution and documented with it.
 
 ### What LST measures
 
