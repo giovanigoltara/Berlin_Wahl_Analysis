@@ -88,6 +88,28 @@ imagery:
     nir_band: "B8"
     red_band: "B4"
     scale_m: 10
+  # Terms of use, to be copied verbatim from each Earth Engine catalogue page (not reachable from
+  # the build environment, and not part of the asset metadata). null prints "not yet recorded".
+  terms:
+    landsat:
+      catalogue: "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2"
+      licence_as_stated: null
+    sentinel2:
+      catalogue: "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED"
+      licence_as_stated: null
+    cloud_score_plus:
+      catalogue: "https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_CLOUD_SCORE_PLUS_V1_S2_HARMONIZED"
+      licence_as_stated: null
+  # Extent for composites, scene counts and previews, EPSG:4326 [west, south, east, north].
+  # Covers Berlin (13.09 to 13.76 E, 52.34 to 52.68 N) with a margin.
+  aoi_bbox: [13.05, 52.31, 13.80, 52.70]
+  # Zonal statistics run in the working CRS on a grid of each sensor's scale_m.
+  # Districts whose residential mask holds fewer effective Landsat pixels (area with data / 900 m2)
+  # than this use the whole district for LST and NDVI instead, and are flagged. Set from the
+  # observed distribution (docs/methods.md, "Satellite indicators over small residential masks");
+  # sql/35_satellite.sql refuses to run while it is null.
+  min_residential_pixels: null
+  preview_res_m: 100  # grid of the low-resolution README previews
 
 # Dasymetric step (sql/30_dasymetric.sql), passed to SQL as hgv.<name> settings.
 dasymetric:
@@ -188,6 +210,3 @@ analysis:
                  "dist_parks", "dist_playgrounds", "dist_public_transport_stops",
                  "dist_schools", "dist_supermarkets"]
     outcomes: ["linke", "cdu", "afd", "gruene", "spd", "bsw", "turnout"]
-  # Districts whose residential mask holds fewer whole Landsat pixels than this use the whole
-  # district instead. Set in Phase 3 from the observed distribution of pixel counts.
-  min_lst_pixels: null
