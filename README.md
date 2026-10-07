@@ -1,6 +1,6 @@
 # Heat, green and the vote: Berlin 2026
 
-> Work in progress. Phases 0 (setup) and 1 (acquisition and inspection) are complete. Phase 2 (PostGIS load, postal vote allocation, dasymetric population, OSM accessibility) is complete; Earth Engine (Phase 3) is next. See `docs/validation_report.md` and `docs/methods.md`.
+> Work in progress. Phases 0 (setup) and 1 (acquisition and inspection) are complete. Phase 2 (PostGIS load, postal vote allocation, dasymetric population, OSM accessibility) and Phase 3 (Earth Engine surface temperature and NDVI) are complete; indicators and analysis (Phase 4) are next. See `docs/validation_report.md` and `docs/methods.md`.
 
 How do surface temperature, vegetation and access to everyday services vary across Berlin's electoral districts, and how do these urban conditions align with party-list (Zweitstimme) results of the Abgeordnetenhaus election of 20 September 2026?
 
@@ -22,6 +22,12 @@ make help       # list all pipeline targets
 ```
 
 `make all` runs the full pipeline. Targets for phases that are not implemented yet exit with an error instead of silently succeeding.
+
+Earth Engine needs your own credentials (below). Without them, `make gee-from-csv` loads the committed results in `data/processed/ee_zonal.csv` instead of `make gee`, and every later step runs the same.
+
+| Summer land surface temperature, 2023 to 2025 | Summer NDVI, 2023 to 2025 |
+| --- | --- |
+| ![LST preview](figures/preview_lst.png) | ![NDVI preview](figures/preview_ndvi.png) |
 
 ## Manual setup
 
