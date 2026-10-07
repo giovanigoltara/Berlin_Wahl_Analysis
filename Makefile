@@ -14,7 +14,7 @@ define todo
 	@echo "Not implemented yet: $(1)" >&2; exit 1
 endef
 
-.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility ee-check gee gee-from-csv analysis maps all clean
+.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility ee-check gee gee-from-csv indicators analysis maps all clean
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -71,8 +71,11 @@ gee-from-csv: dasymetric ## Phase 3 without Earth Engine: load the committed dat
 	$(PY) src/gee_extract.py --from-csv
 	$(PY) src/run_sql.py satellite
 
-analysis: allocation accessibility gee ## Phase 4: indicator table and statistics
-	$(call todo,Phase 4 sql/50_indicators.sql and src/analysis.py)
+indicators: allocation accessibility ## Phase 4: one analysis table per district (run gee or gee-from-csv first)
+	$(PY) src/run_sql.py indicators
+
+analysis: indicators ## Phase 4: correlations (tiers 1 to 3), Moran's I, docs/results.md
+	$(call todo,Phase 4 src/analysis.py)
 
 maps: analysis ## Phase 5: publication figures
 	$(call todo,Phase 5 src/maps.py)

@@ -48,6 +48,12 @@ STEPS = {
         "## Phase 3: Earth Engine satellite indicators",
         "imagery",
     ),
+    "indicators": (
+        "50_indicators.sql",
+        "analysis.indicators_check",
+        "## Phase 4: indicator table",
+        "analysis",
+    ),
 }
 
 
@@ -84,6 +90,23 @@ def write_report(section_title: str, source: str, rows: list[tuple]) -> bool:
     return ok
 
 
+def flatten(settings: dict) -> list[tuple[str, object]]:
+    """Session settings from one params.yaml section.
+
+    Scalars and lists pass as they are; lists are '|'-separated and SQL splits them with
+    string_to_array. A mapping passes its keys as a list under its own name, and each scalar or
+    list value as <name>_<key> (e.g. parties_linke = P04); nested mappings pass keys only.
+    """
+    out = []
+    for name, value in settings.items():
+        if isinstance(value, dict):
+            out.append((name, list(value)))
+            out += [(f"{name}_{k}", v) for k, v in value.items() if not isinstance(v, dict)]
+        else:
+            out.append((name, value))
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("step", choices=STEPS)
@@ -94,11 +117,7 @@ def main() -> int:
     settings = params.get(param_key, {}) if param_key else {}
 
     with psycopg.connect(dsn()) as conn:
-        for name, value in settings.items():
-            # Lists, and the keys of mappings, are passed '|'-separated; SQL splits them with
-            # string_to_array.
-            if isinstance(value, dict):
-                value = list(value)
+        for name, value in flatten(settings):
             text = "|".join(map(str, value)) if isinstance(value, list) else str(value)
             # set_config is parameterised; SET does not accept bind parameters.
             conn.execute("SELECT set_config(%s, %s, false)", (f"hgv.{name}", text))

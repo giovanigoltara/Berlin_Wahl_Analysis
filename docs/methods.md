@@ -92,7 +92,7 @@ This plan was committed before any surface temperature or NDVI value was compute
 ### Variables
 
 - **Outcomes**: Zweitstimme shares of the six parties above 4 % (Linke, CDU, AfD, Grüne, SPD, BSW), turnout, and a **left-right contrast**, (Linke + Grüne) minus (CDU + AfD) share per district. The contrast summarises the main ideological divide in one variable. It describes two camps, not a coalition or a government.
-- **Indicators**: summer LST, summer NDVI, residential density, and mean nearest distance to each of the seven amenity categories. The **accessibility index** is the mean over the seven categories of the standardised (z-scored) logarithm of mean nearest distance; higher means worse access.
+- **Indicators**: summer LST, summer NDVI, residential density, and mean nearest distance to each of the seven amenity categories. The **accessibility index** is the mean over the seven categories of the standardised (z-scored) logarithm of mean nearest distance; higher means worse access. Implemented as ln(1 + distance in metres) (`sql/50_indicators.sql`), because 17 districts have a mean distance of 0 m in some category (residents inside an amenity area, such as a park); the plain logarithm would drop them, and the 1 m offset changes nothing at real distances.
 
 ### Control for centrality
 
