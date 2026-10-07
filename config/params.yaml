@@ -33,14 +33,19 @@ sources:
     landing_page: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
     licence_as_stated: "Der Datenbestand wird unter der Lizenz CC-BY-3.0-Namensnennung veröffentlicht (vgl. https://creativecommons.org/licenses/by/3.0/de/). Als Urheber ist dabei zu nennen: Amt für Statistik Berlin-Brandenburg 2026."
     licence_where: "RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf, section 'Lizenz / Veröffentlichungshinweise' (daten.berlin.de shows only 'Creative Commons Attribution (cc-by)')"
-    # These URLs return an HTML web app page to scripts; browsers then fetch the file from
-    # cdn0.scrvt.com. Hashes are pinned from the browser downloads of 2026-10-03.
+    # The published /opendata/ links (opendata_route) are routes of a JavaScript web app and
+    # return an HTML page to scripts. The app resolves them to the direct file URLs below, found
+    # on 2026-10-07 with a headless browser. Hashes are pinned from the browser downloads of
+    # 2026-10-03 and match the direct files; if the provider replaces a file, the URL or the
+    # hash check fails and the route must be resolved again.
     files:
       geometries_uwb:
-        url: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_UWB_AH26.zip"
+        url: "https://download.statistik-berlin-brandenburg.de/17c6e6ab35dd6980/a43a09d174ed/RBS_OD_UWB_AH26.zip"
+        opendata_route: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_UWB_AH26.zip"
         sha256: "d807a17fb634f8d382aec5996cade1ae510086814ed329865e6a6901cbd75371"
       geometries_doc:
-        url: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf"
+        url: "https://download.statistik-berlin-brandenburg.de/16abdff57d10eaca/0eba244088a2/RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf"
+        opendata_route: "https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_Wahlgebiete_AH2026_Beschreibung.pdf"
         sha256: "9e40a1fa8397d585b8bff2bee4275c969ebdcbef30c815052c750322c9bfad9d"
   population_density:
     landing_page: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
