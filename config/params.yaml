@@ -93,18 +93,25 @@ imagery:
     nir_band: "B8"
     red_band: "B4"
     scale_m: 10
-  # Terms of use, to be copied verbatim from each Earth Engine catalogue page (not reachable from
-  # the build environment, and not part of the asset metadata). null prints "not yet recorded".
+  # Terms of use, copied verbatim from the "Terms of Use" section of each Earth Engine catalogue
+  # page on 2026-10-07 (the pages are not reachable from the build environment, and the terms are
+  # not part of the asset metadata). null prints "not yet recorded".
   terms:
     landsat:
       catalogue: "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2"
-      licence_as_stated: null
+      licence_as_stated: >-
+        Landsat datasets are federally created data and therefore reside in the public domain and
+        may be used, transferred, or reproduced without copyright restriction. Acknowledgement or
+        credit of the USGS as data source should be provided by including a line of text citation
+        such as the example shown below. (Product, Image, Photograph, or Dataset Name) courtesy of
+        the U.S. Geological Survey
     sentinel2:
       catalogue: "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED"
-      licence_as_stated: null
+      licence_as_stated: >-
+        The use of Sentinel data is governed by the Copernicus Sentinel Data Terms and Conditions.
     cloud_score_plus:
       catalogue: "https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_CLOUD_SCORE_PLUS_V1_S2_HARMONIZED"
-      licence_as_stated: null
+      licence_as_stated: "CC-BY-4.0"
   # Extent for composites, scene counts and previews, EPSG:4326 [west, south, east, north].
   # Covers Berlin (13.09 to 13.76 E, 52.34 to 52.68 N) with a margin.
   aoi_bbox: [13.05, 52.31, 13.80, 52.70]
