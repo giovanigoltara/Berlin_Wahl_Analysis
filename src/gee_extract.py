@@ -187,6 +187,10 @@ def reduce_zones(img: ee.Image, band: str, scale: int, z: pd.DataFrame) -> pd.Da
     Effective pixels are the weighted sum of the valid-data mask: the zone's area with data,
     in pixels. An unweighted count would include every pixel the zone touches, which overstates
     fragmented residential masks.
+
+    reduceRegion is mapped over the features instead of calling reduceRegions: on fragmented
+    masks reduceRegions weighted edge pixels differently and overstated the area by up to 10 %
+    (zone 09603: 51.1 pixels for 46.3 pixels of area), while reduceRegion matches PostGIS.
     """
     img = img.addBands(img.select(band).mask().rename("valid"))
     reducer = (
@@ -194,6 +198,13 @@ def reduce_zones(img: ee.Image, band: str, scale: int, z: pd.DataFrame) -> pd.Da
         .combine(ee.Reducer.median(), sharedInputs=True)
         .combine(ee.Reducer.sum(), sharedInputs=True)
     )
+
+    def reduce(f: ee.Feature) -> ee.Feature:
+        stats = img.reduceRegion(
+            reducer, f.geometry(), scale=scale, crs=WORKING_CRS, maxPixels=1e9, tileScale=4
+        )
+        return f.set(stats)
+
     rows = []
     for start in range(0, len(z), BATCH):
         part = z.iloc[start : start + BATCH]
@@ -203,8 +214,7 @@ def reduce_zones(img: ee.Image, band: str, scale: int, z: pd.DataFrame) -> pd.Da
                 for u, zn, g in zip(part.uwb, part.zone, part.geojson, strict=True)
             ]
         )
-        out = img.reduceRegions(fc, reducer, scale=scale, crs=WORKING_CRS, tileScale=4)
-        for f in out.getInfo()["features"]:
+        for f in fc.map(reduce).getInfo()["features"]:
             p = f["properties"]
             rows.append(
                 {
