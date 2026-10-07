@@ -47,6 +47,7 @@ from run_sql import dsn  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "docs/results.md"
+RAW = "raw (no density control)"
 # Names in params.yaml that differ from the indicator table's column names.
 ALIASES = {
     "residential_density": "density_residential",
@@ -137,7 +138,7 @@ def tier2(ind: pd.DataFrame, wide: pd.DataFrame, t1: pd.DataFrame, a: dict) -> p
             if (m, r.outcome) in wide.columns:  # turnout is not defined for method S
                 variants[f"method {m}"] = correlate(x, wide[(m, r.outcome)], z)
         variants["without mismatch districts"] = correlate(x[keep], ind[r.outcome][keep], z[keep])
-        variants["raw (no density control)"] = correlate(x, ind[r.outcome])
+        variants[RAW] = correlate(x, ind[r.outcome])
         if r.outcome == "contrast":
             variants["contrast with SPD"] = correlate(x, ind["contrast_with_spd"], z)
         for name, v in variants.items():
@@ -165,9 +166,23 @@ def robustness(t2: pd.DataFrame, a: dict) -> pd.DataFrame:
     ).reset_index()
     out["robust"] = out["all_same_sign"] & (out["max_rho_change"] < a["robust_max_rho_change"])
     worst = t2.loc[g["rho_change"].idxmax(), ["indicator", "outcome", "variant"]]
-    return out.merge(
+    out = out.merge(
         worst.rename(columns={"variant": "largest_change_in"}), on=["indicator", "outcome"]
     )
+    # Post-hoc correction (2026-10-07, docs/methods.md): the raw variant removes the density
+    # control, which is the change the control exists to make, so it measures the control's
+    # effect, not robustness. It is reported as its own column instead.
+    s = t2[t2["variant"] != RAW].groupby(["indicator", "outcome"], sort=False)
+    post = s.agg(
+        same_sign_excl_raw=("same_sign", "all"), max_rho_change_excl_raw=("rho_change", "max")
+    ).reset_index()
+    post["robust_excl_raw"] = post["same_sign_excl_raw"] & (
+        post["max_rho_change_excl_raw"] < a["robust_max_rho_change"]
+    )
+    raw = t2[t2["variant"] == RAW][["indicator", "outcome", "rho"]].rename(
+        columns={"rho": "raw_rho"}
+    )
+    return out.merge(post, on=["indicator", "outcome"]).merge(raw, on=["indicator", "outcome"])
 
 
 def tier3(ind: pd.DataFrame, a: dict) -> pd.DataFrame:
@@ -264,35 +279,45 @@ def write_results(t1, rob, t3, mor, a, n_districts) -> None:
         f"{a['primary_method']}, 95 % confidence interval, Holm-adjusted p over "
         f"{len(t1)} tests, alpha {a['alpha']}.",
         "",
-        "| Indicator | Outcome | n | rho | 95 % CI | p (Holm) | Holm < alpha | Robust (Tier 2) |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Indicator | Outcome | n | rho | 95 % CI | p (Holm) | Holm < alpha | Raw rho "
+        "| Robust, pre-registered | Robust, post-hoc |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     t = t1.merge(rob, on=["indicator", "outcome"])
+    yn = {True: "yes", False: "no"}
     for r in t.itertuples():
         lines.append(
             f"| {r.indicator} | {r.outcome} | {r.n} | {fmt(r.rho)} | "
-            f"[{fmt(r.ci_low)}, {fmt(r.ci_high)}] | {r.p_holm:.1e} | "
-            f"{'yes' if r.significant else 'no'} | {'yes' if r.robust else 'no'} |"
+            f"[{fmt(r.ci_low)}, {fmt(r.ci_high)}] | {r.p_holm:.1e} | {yn[r.significant]} | "
+            f"{fmt(r.raw_rho)} | {yn[r.robust]} | {yn[r.robust_excl_raw]} |"
         )
     lines += [
+        "",
+        "**Robust, pre-registered** applies the rule fixed on 2026-10-05: same sign and rho "
+        f"changing by less than {a['robust_max_rho_change']} in every Tier 2 variant, including "
+        "the raw correlation. **Robust, post-hoc** applies the same rule without the raw "
+        "variant. This is a correction made on 2026-10-07, after seeing the results: removing "
+        "the density control is the change the control exists to make, so the raw variant "
+        "measures the control's effect, not robustness. The raw rho is shown in its own column; "
+        "the gap between raw and partial rho shows how much of each association is shared with "
+        'density. See `docs/methods.md`, "Deviations from the analysis plan".',
         "",
         "## Tier 2: robustness",
         "",
         f"Each Tier 1 pair recomputed under other allocation methods "
         f"({', '.join(a['robustness_methods'])}; turnout is not defined for S), without the "
         "`population_mismatch` districts, without the density control, and for the contrast "
-        f"with the SPD on the left. Robust: same sign everywhere and rho changing by less than "
-        f"{a['robust_max_rho_change']}.",
+        "with the SPD on the left.",
         "",
-        "| Indicator | Outcome | Variants | Same sign | Max rho change | Largest change in "
-        "| Robust |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Indicator | Outcome | Variants | Max rho change (all) | Largest change in "
+        "| Robust, pre-registered | Max rho change (excl. raw) | Robust, post-hoc |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for r in rob.itertuples():
         lines.append(
-            f"| {r.indicator} | {r.outcome} | {r.variants} | "
-            f"{'yes' if r.all_same_sign else 'no'} | {fmt(r.max_rho_change)} | "
-            f"{r.largest_change_in} | {'yes' if r.robust else 'no'} |"
+            f"| {r.indicator} | {r.outcome} | {r.variants} | {fmt(r.max_rho_change)} | "
+            f"{r.largest_change_in} | {yn[r.robust]} | {fmt(r.max_rho_change_excl_raw)} | "
+            f"{yn[r.robust_excl_raw]} |"
         )
     lines += [
         "",
@@ -355,8 +380,8 @@ def main() -> int:
         print(
             f"tier1 {r.indicator:<13} {r.outcome:<9} rho {r.rho:+.3f} "
             f"[{r.ci_low:+.3f}, {r.ci_high:+.3f}] p_holm {r.p_holm:.1e} "
-            f"robust {'yes' if r.robust else 'no '} (max change {r.max_rho_change:.3f}, "
-            f"{r.largest_change_in})"
+            f"raw {r.raw_rho:+.3f} robust pre-registered {'yes' if r.robust else 'no '} "
+            f"post-hoc {'yes' if r.robust_excl_raw else 'no '}"
         )
     print(f"moran {', '.join(f'{r.variable} {r.moran_i:.2f}' for r in mor.itertuples())}")
     print(
