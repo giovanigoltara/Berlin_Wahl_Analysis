@@ -120,7 +120,11 @@ imagery:
   # than this use the whole district for LST and NDVI instead, and are flagged. Set from the
   # observed distribution (docs/methods.md, "Satellite indicators over small residential masks");
   # sql/35_satellite.sql refuses to run while it is null.
-  min_residential_pixels: null
+  # 10 sits in a gap of the 2026-10-07 distribution: no residential mask has between 0 and 17.9
+  # effective pixels (p1 26, median 85), so any value from 1 to 17 gives the same result. Only
+  # 05334 and 05335 (Spandau, no or near-empty residential land, already population_mismatch) fall
+  # back to the whole district.
+  min_residential_pixels: 10
   preview_res_m: 100  # grid of the low-resolution README previews
 
 # Dasymetric step (sql/30_dasymetric.sql), passed to SQL as hgv.<name> settings.
