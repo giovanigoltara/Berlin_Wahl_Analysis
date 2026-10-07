@@ -1,0 +1,115 @@
+{
+  "run_utc": "2026-10-07 11:42 UTC",
+  "ee_version": "1.7.46",
+  "aoi_bbox": [
+    13.05,
+    52.31,
+    13.8,
+    52.7
+  ],
+  "years": [
+    2023,
+    2024,
+    2025
+  ],
+  "season": "06-01 to 09-01 (end exclusive)",
+  "landsat": {
+    "collections": [
+      "LANDSAT/LC08/C02/T1_L2",
+      "LANDSAT/LC09/C02/T1_L2"
+    ],
+    "band": "ST_B10",
+    "st_scale": 0.00341802,
+    "st_offset": 149.0,
+    "max_scene_cloud_cover": 30,
+    "qa_mask_bits": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "scale_m": 30
+  },
+  "sentinel2": {
+    "collection": "COPERNICUS/S2_SR_HARMONIZED",
+    "cloud_score_collection": "GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED",
+    "cloud_score_band": "cs_cdf",
+    "clear_threshold": 0.6,
+    "nir_band": "B8",
+    "red_band": "B4",
+    "scale_m": 10
+  },
+  "terms": {
+    "landsat": {
+      "catalogue": "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2",
+      "licence_as_stated": "Landsat datasets are federally created data and therefore reside in the public domain and may be used, transferred, or reproduced without copyright restriction. Acknowledgement or credit of the USGS as data source should be provided by including a line of text citation such as the example shown below. (Product, Image, Photograph, or Dataset Name) courtesy of the U.S. Geological Survey"
+    },
+    "sentinel2": {
+      "catalogue": "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED",
+      "licence_as_stated": "The use of Sentinel data is governed by the Copernicus Sentinel Data Terms and Conditions."
+    },
+    "cloud_score_plus": {
+      "catalogue": "https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_CLOUD_SCORE_PLUS_V1_S2_HARMONIZED",
+      "licence_as_stated": "CC-BY-4.0"
+    }
+  },
+  "landsat_scenes": {
+    "2023": {
+      "LANDSAT_8": 26,
+      "LANDSAT_9": 28
+    },
+    "2024": {
+      "LANDSAT_8": 23,
+      "LANDSAT_9": 23
+    },
+    "2025": {
+      "LANDSAT_8": 23,
+      "LANDSAT_9": 22
+    }
+  },
+  "landsat_kept": {
+    "2023": {
+      "LANDSAT_8": 9,
+      "LANDSAT_9": 9
+    },
+    "2024": {
+      "LANDSAT_8": 7,
+      "LANDSAT_9": 9
+    },
+    "2025": {
+      "LANDSAT_8": 8,
+      "LANDSAT_9": 7
+    }
+  },
+  "s2_images": {
+    "2023": {
+      "Sentinel-2A": 95,
+      "Sentinel-2B": 95
+    },
+    "2024": {
+      "Sentinel-2A": 90,
+      "Sentinel-2B": 95
+    },
+    "2025": {
+      "Sentinel-2A": 95,
+      "Sentinel-2B": 85,
+      "Sentinel-2C": 90
+    }
+  },
+  "lst_obs": {
+    "p0": 2,
+    "p5": 11,
+    "p50": 22,
+    "p95": 29
+  },
+  "ndvi_obs": {
+    "p0": 32,
+    "p5": 44,
+    "p50": 92,
+    "p95": 146
+  },
+  "lst_vis": [
+    26,
+    39
+  ]
+}

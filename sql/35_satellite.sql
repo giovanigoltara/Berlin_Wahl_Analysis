@@ -114,27 +114,45 @@ SELECT 'NDVI district means (information)', true,
               round((percentile_cont(0.5) WITHIN GROUP (ORDER BY ndvi_mean))::numeric, 3))
 FROM analysis.district_satellite;
 
--- The area Earth Engine saw must match the area PostGIS sent, which validates the geometry
--- transfer (transform, GeoJSON, reduction grid). Zones with gaps in the composite would differ.
+-- The area Earth Engine reduced must match the area PostGIS sent, which validates the geometry
+-- transfer (transform, GeoJSON, reduction grid). NDVI is used because the Sentinel-2 composite has
+-- no gaps; Landsat surface temperature has permanent no-data pixels (next check).
+CREATE TEMP TABLE zone_area AS
+SELECT e.uwb, e.zone, e.indicator, e.n_eff_pixels,
+       e.n_eff_pixels * CASE e.indicator WHEN 'lst' THEN 900 ELSE 100 END / a.area_m2 AS ratio,
+       a.area_m2
+FROM raw.ee_zonal AS e
+JOIN (
+    SELECT uwb, 'residential' AS zone, residential_area_m2 AS area_m2
+    FROM analysis.district_population WHERE residential_geom IS NOT NULL
+    UNION ALL
+    SELECT uwb, 'district', ST_Area(geom) FROM clean.station_district
+) AS a USING (uwb, zone);
+
 INSERT INTO analysis.satellite_check (name, passed, detail)
-SELECT 'Earth Engine area matches PostGIS area (LST, within 2 %, zones of 10+ pixels)',
-       count(*) FILTER (WHERE big AND abs(ratio - 1) > 0.02) = 0,
-       format('%s of %s zones off by more than 2 %%; ratio p1 %s, median %s, p99 %s',
-              count(*) FILTER (WHERE big AND abs(ratio - 1) > 0.02), count(*) FILTER (WHERE big),
-              round((percentile_cont(0.01) WITHIN GROUP (ORDER BY ratio))::numeric, 4),
+SELECT 'Earth Engine area matches PostGIS area (NDVI, within 2 %, zones of 1,000 m2 or more)',
+       count(*) FILTER (WHERE abs(ratio - 1) > 0.02) = 0,
+       format('%s of %s zones off by more than 2 %%; ratio min %s, median %s, max %s',
+              count(*) FILTER (WHERE abs(ratio - 1) > 0.02), count(*),
+              round(min(ratio)::numeric, 4),
               round((percentile_cont(0.5) WITHIN GROUP (ORDER BY ratio))::numeric, 4),
-              round((percentile_cont(0.99) WITHIN GROUP (ORDER BY ratio))::numeric, 4))
-FROM (
-    SELECT e.n_eff_pixels * 900 / a.area_m2 AS ratio, a.area_m2 >= 9000 AS big
-    FROM raw.ee_zonal AS e
-    JOIN (
-        SELECT uwb, 'residential' AS zone, residential_area_m2 AS area_m2
-        FROM analysis.district_population WHERE residential_geom IS NOT NULL
-        UNION ALL
-        SELECT uwb, 'district', ST_Area(geom) FROM clean.station_district
-    ) AS a USING (uwb, zone)
-    WHERE e.indicator = 'lst'
-) AS t;
+              round(max(ratio)::numeric, 4))
+FROM zone_area WHERE indicator = 'ndvi' AND area_m2 >= 1000;
+
+-- Landsat Collection 2 surface temperature is missing in some pixels of every scene (ST_B10
+-- masked at the source while QA_PIXEL is clear), so LST describes the covered part of the zone.
+INSERT INTO analysis.satellite_check (name, passed, detail)
+SELECT 'LST data coverage of zones (information)', true,
+       format('share of zone area with LST: min %s, p1 %s, median %s; %s of %s zones below 0.95 (%s residential, %s whole district): %s',
+              round(min(ratio)::numeric, 3),
+              round((percentile_cont(0.01) WITHIN GROUP (ORDER BY ratio))::numeric, 3),
+              round((percentile_cont(0.5) WITHIN GROUP (ORDER BY ratio))::numeric, 3),
+              count(*) FILTER (WHERE ratio < 0.95), count(*),
+              count(*) FILTER (WHERE ratio < 0.95 AND zone = 'residential'),
+              count(*) FILTER (WHERE ratio < 0.95 AND zone = 'district'),
+              coalesce(string_agg(uwb || ' ' || left(zone, 3) || ' ' || round(ratio::numeric, 2),
+                                  ', ' ORDER BY ratio) FILTER (WHERE ratio < 0.95), 'none'))
+FROM zone_area WHERE indicator = 'lst' AND area_m2 >= 9000;
 
 INSERT INTO analysis.satellite_check (name, passed, detail)
 SELECT 'Effective LST pixels in residential land (information)', true,
