@@ -77,8 +77,8 @@ indicators: allocation accessibility ## Phase 4: one analysis table per district
 analysis: indicators ## Phase 4: correlations (tiers 1 to 3), Moran's I, docs/results.md
 	$(PY) src/analysis.py
 
-maps: analysis ## Phase 5: publication figures
-	$(call todo,Phase 5 src/maps.py)
+maps: analysis ## Phase 5: publication maps, PNG (300 dpi) and SVG in figures/
+	$(PY) src/maps.py
 
 all: maps ## Run the full pipeline
 
