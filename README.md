@@ -1,5 +1,7 @@
 # Heat, green and the vote: Berlin 2026
 
+[![CI](https://github.com/giovanigoltara/Berlin_Wahl_Analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/giovanigoltara/Berlin_Wahl_Analysis/actions/workflows/ci.yml)
+
 How do surface temperature, vegetation and access to everyday services vary across Berlin's electoral districts, and how do these urban conditions align with party-list (Zweitstimme) results of the Abgeordnetenhaus election of 20 September 2026?
 
 This is an ecological, descriptive analysis of 2,542 polling-station districts. Results describe districts, not voters: a district with hotter surfaces and a higher Linke share says nothing about how any individual in it voted. The election results used are the **preliminary** results (release `v0.1-preliminary`).
@@ -84,7 +86,7 @@ make setup   # create .env, install the pinned Python environment
 make all     # download, load, analyse and map; satellite values from data/processed (see below)
 ```
 
-`make all` runs every step from the raw downloads; from a fresh clone it took 4 minutes, downloads included, and every output matched the committed version. Earth Engine needs your own account, so by default the satellite step loads the committed Earth Engine results (`data/processed/ee_zonal.csv`, `make gee-from-csv`). With credentials set up (next section), `make all SATELLITE=gee` recomputes them as well, which takes about 75 minutes. `make help` lists every target.
+`make all` runs every step from the raw downloads; from a fresh clone it took 4 minutes, downloads included, and every output matched the committed version. Earth Engine needs your own account, so by default the satellite step loads the committed Earth Engine results (`data/processed/ee_zonal.csv`, `make gee-from-csv`). With credentials set up (next section), `make all SATELLITE=gee` recomputes them as well, which takes about 75 minutes. `make help` lists every target. `make check` runs the static checks, and `make reproduced` confirms after a run that every committed output was regenerated unchanged. GitHub Actions runs both: the checks on every push, and the full pipeline from a fresh runner on every push to `main` and weekly.
 
 ### Earth Engine credentials (optional)
 

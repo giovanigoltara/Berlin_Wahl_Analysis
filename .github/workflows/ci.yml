@@ -1,0 +1,57 @@
+name: CI
+
+# checks:   lint, formatting, parameters, data package and citation metadata, on every push and PR.
+# pipeline: the full pipeline from the raw downloads on a fresh runner, without Earth Engine
+#           credentials (committed results, SATELLITE=gee-from-csv), then a check that every
+#           committed table and figure was reproduced. It downloads about 300 MB from the
+#           providers, so it runs on pushes to main, weekly (which also catches a provider
+#           changing a source file: the pinned hashes then fail) and on demand.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --locked
+      - run: make check
+
+  pipeline:
+    if: >-
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Set up the environment
+        run: make setup
+      - name: Run the full pipeline
+        run: make all
+      - name: Check that every committed output was reproduced
+        run: make reproduced
+      - name: Keep the validation report and download manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-reports
+          path: |
+            docs/validation_report.md
+            docs/results.md
+            data/raw/manifest.csv
