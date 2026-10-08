@@ -92,7 +92,7 @@ This plan was committed before any surface temperature or NDVI value was compute
 ### Variables
 
 - **Outcomes**: Zweitstimme shares of the six parties above 4 % (Linke, CDU, AfD, Grüne, SPD, BSW), turnout, and a **left-right contrast**, (Linke + Grüne) minus (CDU + AfD) share per district. The contrast summarises the main ideological divide in one variable. It describes two camps, not a coalition or a government.
-- **Indicators**: summer LST, summer NDVI, residential density, and mean nearest distance to each of the seven amenity categories. The **accessibility index** is the mean over the seven categories of the standardised (z-scored) logarithm of mean nearest distance; higher means worse access.
+- **Indicators**: summer LST, summer NDVI, residential density, and mean nearest distance to each of the seven amenity categories. The **accessibility index** is the mean over the seven categories of the standardised (z-scored) logarithm of mean nearest distance; higher means worse access. Implemented as ln(1 + distance in metres) (`sql/50_indicators.sql`), because 17 districts have a mean distance of 0 m in some category (residents inside an amenity area, such as a park); the plain logarithm would drop them, and the 1 m offset changes nothing at real distances.
 
 ### Control for centrality
 
@@ -115,6 +115,13 @@ Neighbouring districts are similar (spatial autocorrelation), which violates the
 ### Satellite indicators over small residential masks
 
 Residential masks exclude street space, and a 30 m Landsat pixel often straddles a block and a street. Phase 3 records the effective number of Landsat pixels in each district's residential mask (its area with valid data divided by 900 m2). Districts below `imagery.min_residential_pixels` use the whole district instead and are flagged; the threshold is set from the observed distribution and documented with it.
+
+### Deviations from the analysis plan
+
+Both were made after the plan was fixed and are reported openly; the pre-registered version is kept wherever it can be computed.
+
+1. **Accessibility index, ln(1 + distance)** (2026-10-07, before any correlation was computed). The plan says "logarithm of mean nearest distance". 17 districts have a mean distance of 0 m in some category, where the plain logarithm is undefined, so the index uses ln(1 + distance in metres).
+2. **Tier 2 robustness rule** (2026-10-07, after seeing the results). The pre-registered rule counts the raw, uncontrolled correlation as a robustness variant. Removing the density control is the change the control exists to make, so that variant measures the control's effect, not the stability of the result. Under the pre-registered rule 2 of 16 Tier 1 pairs are robust; in every failing pair the largest change comes from the raw variant. Without it, all 16 pairs are robust (rho changes by at most 0.043 across allocation methods A, B and S, without the `population_mismatch` districts, and with the SPD in the contrast). `docs/results.md` reports both, labelled "pre-registered" and "post-hoc", and shows the raw rho as its own column.
 
 ### What LST measures
 
