@@ -18,6 +18,7 @@ import argparse
 import csv
 import hashlib
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -26,6 +27,7 @@ import requests
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+RETRIES = 4  # after the first attempt; waits 2, 4, 8 and 16 s
 TIMEOUT_S = 300
 USER_AGENT = (
     "heat-green-vote-berlin/0.1 (research; +https://github.com/giovanigoltara/berlin_wahl_analysis)"
@@ -88,14 +90,28 @@ def target_path(raw_dir: Path, source: str, file_id: str, url: str) -> Path:
 
 
 def fetch(url: str, dest: Path) -> None:
+    """Download to a .part file and rename on success. Connection errors and server errors
+    (5xx) are retried RETRIES times with exponential backoff; other HTTP errors fail at once."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    with requests.get(url, stream=True, timeout=TIMEOUT_S, headers={"User-Agent": USER_AGENT}) as r:
-        r.raise_for_status()
-        with tmp.open("wb") as f:
-            for chunk in r.iter_content(1 << 20):
-                f.write(chunk)
-    tmp.replace(dest)
+    for attempt in range(RETRIES + 1):
+        try:
+            with requests.get(
+                url, stream=True, timeout=TIMEOUT_S, headers={"User-Agent": USER_AGENT}
+            ) as r:
+                r.raise_for_status()
+                with tmp.open("wb") as f:
+                    for chunk in r.iter_content(1 << 20):
+                        f.write(chunk)
+            tmp.replace(dest)
+            return
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            server_side = not isinstance(e, requests.HTTPError) or e.response.status_code >= 500
+            if attempt == RETRIES or not server_side:
+                raise
+            wait = 2 ** (attempt + 1)
+            print(f"retry {url} in {wait} s ({e.__class__.__name__})", file=sys.stderr)
+            time.sleep(wait)
 
 
 def read_manifest(path: Path) -> dict[str, dict]:

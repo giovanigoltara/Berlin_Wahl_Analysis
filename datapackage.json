@@ -1,0 +1,179 @@
+{
+  "name": "heat-green-vote-berlin-2026",
+  "title": "Heat, green and the vote: Berlin 2026, derived district tables",
+  "description": "Committed outputs of the pipeline in this repository: urban indicators and party-list results per polling-station district of the Berlin Abgeordnetenhaus election of 20 September 2026 (preliminary results), the Earth Engine zonal statistics they are built from, and the correlation results of the pre-registered analysis plan. Districts are keyed by uwb, the Urnenwahlbezirk number of the official 2026 geometries. Ecological data: values describe districts, not voters. docs/data_dictionary.md is rendered from this file by src/data_dictionary.py.",
+  "version": "0.1-preliminary",
+  "homepage": "https://github.com/giovanigoltara/Berlin_Wahl_Analysis",
+  "contributors": [
+    {"title": "Giovani Bonadiman Goltara", "email": "giovani.goltara@gmail.com", "role": "author"}
+  ],
+  "licenses": [
+    {"name": "ODbL-1.0", "title": "Open Data Commons Open Database License 1.0", "path": "https://opendatacommons.org/licenses/odbl/1-0/"}
+  ],
+  "sources": [
+    {"title": "Der Landeswahlleiter für Berlin: Abgeordnetenhauswahl 2026, Zweitstimmen (preliminary), CC BY 3.0 DE", "path": "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"},
+    {"title": "Amt für Statistik Berlin-Brandenburg: Geometrien der Wahlbezirke 2026, CC BY 3.0 DE", "path": "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"},
+    {"title": "Amt für Statistik Berlin-Brandenburg / Einwohnerdichte 2025 (Umweltatlas), CC BY 3.0 DE", "path": "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"},
+    {"title": "OpenStreetMap contributors, Geofabrik Berlin extract 2026-10-03, ODbL 1.0", "path": "https://download.geofabrik.de/europe/germany/berlin.html"},
+    {"title": "Landsat 8 and 9 Collection 2 Level 2 courtesy of the U.S. Geological Survey", "path": "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2"},
+    {"title": "Copernicus Sentinel-2 Surface Reflectance (Harmonized), Copernicus Sentinel data terms", "path": "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED"},
+    {"title": "Cloud Score+ S2_HARMONIZED V1, CC BY 4.0", "path": "https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_CLOUD_SCORE_PLUS_V1_S2_HARMONIZED"}
+  ],
+  "resources": [
+    {
+      "name": "indicators",
+      "path": "data/processed/indicators.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "The analysis table: one row per polling-station district (analysis.indicators in PostGIS, sql/50_indicators.sql, without geometry). Vote outcomes use postal allocation method C. Indicators are computed over the district's residential land.",
+      "schema": {
+        "primaryKey": ["uwb"],
+        "fields": [
+          {"name": "uwb", "type": "string", "constraints": {"required": true, "pattern": "[0-9]{5}"}, "description": "Polling-station district (Urnenwahlbezirk) number; the first two digits are the Bezirk.", "source": "Wahlbezirke 2026"},
+          {"name": "bez", "type": "string", "constraints": {"pattern": "[0-9]{2}"}, "description": "Bezirk (borough) number, 01 to 12.", "source": "Wahlbezirke 2026"},
+          {"name": "residents", "type": "number", "unit": "persons", "description": "Residents 2025 in the district, from population blocks split by area where a block crosses a district boundary.", "source": "Einwohnerdichte 2025; sql/30_dasymetric.sql"},
+          {"name": "residential_residents", "type": "number", "unit": "persons", "description": "Residents of blocks that count as residential land (excluding open land and infrastructure block types).", "source": "Einwohnerdichte 2025; sql/30_dasymetric.sql"},
+          {"name": "density_residential", "type": "number", "unit": "persons per ha", "description": "residential_residents per hectare of residential land. Empty where the district has no residential land.", "source": "sql/30_dasymetric.sql"},
+          {"name": "log_density_residential", "type": "number", "unit": "ln(persons per ha)", "description": "Natural logarithm of density_residential; the control variable of the Tier 1 partial correlations.", "source": "sql/50_indicators.sql"},
+          {"name": "lst", "type": "number", "unit": "degrees Celsius", "description": "Summer land surface temperature: area-weighted mean over the zone in satellite_zone of the per-pixel median of clear Landsat 8/9 observations, June to August 2023 to 2025.", "source": "Landsat 8/9 C2 L2; src/gee_extract.py, sql/35_satellite.sql"},
+          {"name": "ndvi", "type": "number", "unit": "dimensionless, -1 to 1", "description": "Summer NDVI: area-weighted mean over the zone in satellite_zone of the per-pixel median of clear Sentinel-2 observations, June to August 2023 to 2025.", "source": "Sentinel-2 SR, Cloud Score+; src/gee_extract.py, sql/35_satellite.sql"},
+          {"name": "satellite_zone", "type": "string", "constraints": {"enum": ["residential", "district"]}, "description": "Area over which lst and ndvi were averaged: the residential land, or the whole district when residential land is missing or too small (imagery.min_residential_pixels).", "source": "sql/35_satellite.sql"},
+          {"name": "satellite_fallback", "type": "boolean", "description": "True where satellite_zone is the whole district.", "source": "sql/35_satellite.sql"},
+          {"name": "access_index", "type": "number", "unit": "standard deviations", "description": "Mean over the 7 amenity categories of the z-scored ln(1 + mean nearest distance in m). 0 is the Berlin district average; higher means farther from everyday services.", "source": "OpenStreetMap; sql/50_indicators.sql"},
+          {"name": "population_mismatch", "type": "boolean", "description": "True where the 2026 register lists more eligible voters than the 2025 population has residents, or the district has no residential land; population-weighted indicators are unreliable there.", "source": "sql/30_dasymetric.sql"},
+          {"name": "dist_health", "type": "number", "unit": "m", "description": "Residents-weighted mean straight-line distance from residential land to the nearest doctor, clinic, hospital or pharmacy.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_kindergartens", "type": "number", "unit": "m", "description": "As dist_health, to the nearest kindergarten.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_parks", "type": "number", "unit": "m", "description": "As dist_health, to the nearest park (distance to its edge).", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_playgrounds", "type": "number", "unit": "m", "description": "As dist_health, to the nearest public playground.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_public_transport_stops", "type": "number", "unit": "m", "description": "As dist_health, to the nearest bus stop, tram stop or rail station.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_schools", "type": "number", "unit": "m", "description": "As dist_health, to the nearest school.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "dist_supermarkets", "type": "number", "unit": "m", "description": "As dist_health, to the nearest supermarket.", "source": "OpenStreetMap; sql/40_accessibility.sql"},
+          {"name": "afd", "type": "number", "unit": "share, 0 to 1", "description": "AfD (P05) share of valid Zweitstimmen, station plus allocated postal votes (method C).", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "bsw", "type": "number", "unit": "share, 0 to 1", "description": "BSW (P24) share of valid Zweitstimmen, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "cdu", "type": "number", "unit": "share, 0 to 1", "description": "CDU (P01) share of valid Zweitstimmen, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "contrast", "type": "number", "unit": "share difference, -1 to 1", "description": "Left-right contrast: (Linke + Grüne) minus (CDU + AfD) share, method C. Describes two ideological camps, not a coalition.", "source": "sql/50_indicators.sql"},
+          {"name": "contrast_with_spd", "type": "number", "unit": "share difference, -1 to 1", "description": "As contrast, with the SPD added to the left camp (Tier 2 variant).", "source": "sql/50_indicators.sql"},
+          {"name": "gruene", "type": "number", "unit": "share, 0 to 1", "description": "Bündnis 90/Die Grünen (P03) share of valid Zweitstimmen, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "linke", "type": "number", "unit": "share, 0 to 1", "description": "Die Linke (P04) share of valid Zweitstimmen, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "spd", "type": "number", "unit": "share, 0 to 1", "description": "SPD (P02) share of valid Zweitstimmen, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql, sql/50_indicators.sql"},
+          {"name": "turnout", "type": "number", "unit": "share, 0 to 1", "description": "Voters (station plus allocated postal) divided by eligible voters, method C.", "source": "Landeswahlleiter; sql/20_postal_allocation.sql"}
+        ]
+      }
+    },
+    {
+      "name": "ee-zonal",
+      "path": "data/processed/ee_zonal.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Earth Engine zonal statistics per district, zone and indicator (raw.ee_zonal). Lets the pipeline run without Earth Engine credentials (make gee-from-csv).",
+      "schema": {
+        "primaryKey": ["uwb", "zone", "indicator"],
+        "fields": [
+          {"name": "uwb", "type": "string", "constraints": {"required": true, "pattern": "[0-9]{5}"}, "description": "Polling-station district number.", "source": "Wahlbezirke 2026"},
+          {"name": "zone", "type": "string", "constraints": {"enum": ["residential", "district"]}, "description": "Residential land of the district, or the whole district.", "source": "src/gee_extract.py"},
+          {"name": "indicator", "type": "string", "constraints": {"enum": ["lst", "ndvi"]}, "description": "Summer land surface temperature (degrees C) or NDVI.", "source": "src/gee_extract.py"},
+          {"name": "mean", "type": "number", "unit": "degrees C (lst) or dimensionless (ndvi)", "description": "Area-weighted mean of the composite over the zone.", "source": "src/gee_extract.py"},
+          {"name": "median", "type": "number", "unit": "as mean", "description": "Area-weighted median of the composite over the zone.", "source": "src/gee_extract.py"},
+          {"name": "n_eff_pixels", "type": "number", "unit": "pixels (30 m for lst, 10 m for ndvi)", "description": "Effective pixels: the zone's area with valid data divided by the pixel area.", "source": "src/gee_extract.py"},
+          {"name": "mean_obs", "type": "number", "unit": "observations", "description": "Mean number of clear observations per pixel in the composite over the zone.", "source": "src/gee_extract.py"}
+        ]
+      }
+    },
+    {
+      "name": "ee-meta",
+      "path": "data/processed/ee_meta.json",
+      "format": "json",
+      "mediatype": "application/json",
+      "encoding": "utf-8",
+      "description": "Run metadata of the Earth Engine extraction: run time, earthengine-api version, extent, season, collections and parameters, scene counts per year and clear-observation percentiles. Rendered in docs/provenance.md."
+    },
+    {
+      "name": "tier1",
+      "path": "data/processed/tier1.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Tier 1 (confirmatory) correlations: partial Spearman rho controlling for log residential density, method C, Holm correction over the 16 tests.",
+      "schema": {
+        "primaryKey": ["indicator", "outcome"],
+        "fields": [
+          {"name": "indicator", "type": "string", "description": "Indicator column of the indicators table.", "source": "src/analysis.py"},
+          {"name": "outcome", "type": "string", "description": "Outcome column of the indicators table.", "source": "src/analysis.py"},
+          {"name": "n", "type": "integer", "unit": "districts", "description": "Districts with complete data for the pair and the control.", "source": "src/analysis.py"},
+          {"name": "rho", "type": "number", "description": "Partial Spearman rho.", "source": "src/analysis.py"},
+          {"name": "ci_low", "type": "number", "description": "Lower 95 % confidence limit (Fisher transform, Bonett-Wright standard error); assumes independent districts.", "source": "src/analysis.py"},
+          {"name": "ci_high", "type": "number", "description": "Upper 95 % confidence limit.", "source": "src/analysis.py"},
+          {"name": "p", "type": "number", "description": "Two-sided p-value, unadjusted; assumes independent districts, which spatial autocorrelation violates.", "source": "src/analysis.py"},
+          {"name": "p_holm", "type": "number", "description": "Holm-adjusted p-value over the Tier 1 tests.", "source": "src/analysis.py"},
+          {"name": "significant", "type": "boolean", "description": "p_holm below analysis.alpha (0.05).", "source": "src/analysis.py"}
+        ]
+      }
+    },
+    {
+      "name": "tier2",
+      "path": "data/processed/tier2.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Tier 2 robustness: every Tier 1 pair under each variant (allocation methods A, B, S; without population_mismatch districts; raw correlation; contrast with SPD).",
+      "schema": {
+        "primaryKey": ["indicator", "outcome", "variant"],
+        "fields": [
+          {"name": "indicator", "type": "string", "description": "Indicator column of the indicators table.", "source": "src/analysis.py"},
+          {"name": "outcome", "type": "string", "description": "Outcome column of the indicators table.", "source": "src/analysis.py"},
+          {"name": "variant", "type": "string", "description": "Robustness variant.", "source": "src/analysis.py"},
+          {"name": "tier1_rho", "type": "number", "description": "The pair's Tier 1 rho, for comparison.", "source": "src/analysis.py"},
+          {"name": "n", "type": "integer", "unit": "districts", "description": "Districts with complete data in this variant.", "source": "src/analysis.py"},
+          {"name": "rho", "type": "number", "description": "Spearman rho in this variant (partial on log density, except the raw variant).", "source": "src/analysis.py"},
+          {"name": "ci_low", "type": "number", "description": "Lower 95 % confidence limit.", "source": "src/analysis.py"},
+          {"name": "ci_high", "type": "number", "description": "Upper 95 % confidence limit.", "source": "src/analysis.py"},
+          {"name": "p", "type": "number", "description": "Two-sided p-value, unadjusted.", "source": "src/analysis.py"},
+          {"name": "same_sign", "type": "boolean", "description": "rho has the same sign as tier1_rho.", "source": "src/analysis.py"},
+          {"name": "rho_change", "type": "number", "description": "Absolute difference between rho and tier1_rho.", "source": "src/analysis.py"}
+        ]
+      }
+    },
+    {
+      "name": "tier3",
+      "path": "data/processed/tier3.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Tier 3 (exploratory) raw Spearman rho between 10 indicators (rows) and 7 outcomes (columns), method C, no p-values.",
+      "schema": {
+        "primaryKey": ["indicator"],
+        "fields": [
+          {"name": "indicator", "type": "string", "description": "Indicator (residential_density refers to density_residential).", "source": "src/analysis.py"},
+          {"name": "linke", "type": "number", "description": "Raw Spearman rho with the Die Linke share.", "source": "src/analysis.py"},
+          {"name": "cdu", "type": "number", "description": "Raw Spearman rho with the CDU share.", "source": "src/analysis.py"},
+          {"name": "afd", "type": "number", "description": "Raw Spearman rho with the AfD share.", "source": "src/analysis.py"},
+          {"name": "gruene", "type": "number", "description": "Raw Spearman rho with the Grüne share.", "source": "src/analysis.py"},
+          {"name": "spd", "type": "number", "description": "Raw Spearman rho with the SPD share.", "source": "src/analysis.py"},
+          {"name": "bsw", "type": "number", "description": "Raw Spearman rho with the BSW share.", "source": "src/analysis.py"},
+          {"name": "turnout", "type": "number", "description": "Raw Spearman rho with turnout.", "source": "src/analysis.py"}
+        ]
+      }
+    },
+    {
+      "name": "moran",
+      "path": "data/processed/moran.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Global Moran's I per variable: queen contiguity, row-standardised, 999 permutations, fixed seed.",
+      "schema": {
+        "primaryKey": ["variable"],
+        "fields": [
+          {"name": "variable", "type": "string", "description": "Variable of the indicators table.", "source": "src/analysis.py"},
+          {"name": "n", "type": "integer", "unit": "districts", "description": "Districts with data.", "source": "src/analysis.py"},
+          {"name": "moran_i", "type": "number", "description": "Global Moran's I.", "source": "src/analysis.py"},
+          {"name": "expected_i", "type": "number", "description": "Expected I without spatial autocorrelation, -1 / (n - 1).", "source": "src/analysis.py"},
+          {"name": "p_sim", "type": "number", "description": "Pseudo p-value from the permutations.", "source": "src/analysis.py"},
+          {"name": "islands", "type": "integer", "unit": "districts", "description": "Districts without a contiguous neighbour.", "source": "src/analysis.py"}
+        ]
+      }
+    }
+  ]
+}

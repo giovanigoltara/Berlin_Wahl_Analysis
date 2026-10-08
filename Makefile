@@ -1,5 +1,4 @@
 # Pipeline entry point. Run `make help` for targets.
-# Targets for later phases fail loudly until implemented, so `make all` never reports false success.
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -9,12 +8,11 @@ export
 
 PSQL := docker compose exec -T db psql -v ON_ERROR_STOP=1 -U $${POSTGRES_USER:-hgv} -d $${POSTGRES_DB:-hgv}
 PY   := uv run python
+# Satellite step used by `make all`: gee-from-csv loads the committed Earth Engine results and
+# needs no account; `make all SATELLITE=gee` recomputes them (Earth Engine credentials, ~75 min).
+SATELLITE ?= gee-from-csv
 
-define todo
-	@echo "Not implemented yet: $(1)" >&2; exit 1
-endef
-
-.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility ee-check gee gee-from-csv indicators analysis maps all clean
+.PHONY: help setup env db-up db-check db-down db-reset download inspect load allocation dasymetric osm accessibility ee-check gee gee-from-csv indicators analysis maps dictionary all clean
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -71,7 +69,7 @@ gee-from-csv: dasymetric ## Phase 3 without Earth Engine: load the committed dat
 	$(PY) src/gee_extract.py --from-csv
 	$(PY) src/run_sql.py satellite
 
-indicators: allocation accessibility ## Phase 4: one analysis table per district (run gee or gee-from-csv first)
+indicators: allocation accessibility $(SATELLITE) ## Phase 4: one analysis table per district
 	$(PY) src/run_sql.py indicators
 
 analysis: indicators ## Phase 4: correlations (tiers 1 to 3), Moran's I, docs/results.md
@@ -80,7 +78,10 @@ analysis: indicators ## Phase 4: correlations (tiers 1 to 3), Moran's I, docs/re
 maps: analysis ## Phase 5: publication maps, PNG (300 dpi) and SVG in figures/
 	$(PY) src/maps.py
 
-all: maps ## Run the full pipeline
+dictionary: analysis ## Phase 5: validate datapackage.json, render docs/data_dictionary.md
+	$(PY) src/data_dictionary.py
+
+all: maps dictionary ## Run the full pipeline
 
 clean: ## Remove regenerated data (raw and interim)
 	find data/raw data/interim -mindepth 1 ! -name .gitkeep -delete

@@ -34,6 +34,7 @@ import yaml
 from sqlalchemy import create_engine, text
 
 matplotlib.use("Agg")
+matplotlib.rcParams["svg.hashsalt"] = "berlin-2026"
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import ListedColormap  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
@@ -78,12 +79,14 @@ def load(engine) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         FROM analysis.indicators AS i
         JOIN analysis.district_population AS p USING (uwb)
         WHERE p.residential_geom IS NOT NULL
+        ORDER BY i.uwb
         """
     )
     bez = text(
         f"""
-        SELECT bez, ST_SimplifyPreserveTopology(ST_Union(geom), {MAP_SIMPLIFY_M}) AS geom
-        FROM clean.station_district GROUP BY bez
+        SELECT bez, ST_SimplifyPreserveTopology(ST_Union(geom ORDER BY uwb), {MAP_SIMPLIFY_M})
+               AS geom
+        FROM clean.station_district GROUP BY bez ORDER BY bez
         """
     )
     with engine.connect() as conn:
@@ -137,8 +140,10 @@ def finish(fig, ax, bezirke: gpd.GeoDataFrame, out: Path) -> None:
         arrowprops={"arrowstyle": "-|>", "color": INK, "lw": 1},
     )
     fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.08)
-    for ext in ("png", "svg"):
-        fig.savefig(out.with_suffix(f".{ext}"), dpi=300, facecolor="white")
+    # Fixed draw order (ORDER BY above), no date stamp and a fixed SVG id salt make reruns
+    # byte-identical, so a changed figure in git always means changed data or code.
+    fig.savefig(out.with_suffix(".png"), dpi=300, facecolor="white", metadata={"Software": None})
+    fig.savefig(out.with_suffix(".svg"), dpi=300, facecolor="white", metadata={"Date": None})
     plt.close(fig)
 
 

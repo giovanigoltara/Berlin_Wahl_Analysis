@@ -17,8 +17,8 @@ regression on the ranks of the control. Confidence intervals use the Fisher tran
 Bonett-Wright standard error sqrt((1 + rho^2 / 2) / (n - 3 - k)), k controls. p-values assume
 independent districts, which spatial autocorrelation violates; they rank evidence within Tier 1.
 
-Outputs: data/processed/tier1.csv, tier2.csv, tier3.csv, moran.csv; figures/tier3_correlations.png;
-docs/results.md.
+Outputs: data/processed/indicators.csv (the analysis table without geometry), tier1.csv,
+tier2.csv, tier3.csv, moran.csv; figures/tier3_correlations.png; docs/results.md.
 
 Usage: uv run python src/analysis.py
 """
@@ -371,8 +371,12 @@ def main() -> int:
     processed = ROOT / params["paths"]["processed"]
     t1.to_csv(processed / "tier1.csv", index=False, float_format="%.6g")
     t2.to_csv(processed / "tier2.csv", index=False, float_format="%.6g")
-    t3.to_csv(processed / "tier3.csv", float_format="%.6g")
+    t3.to_csv(processed / "tier3.csv", index_label="indicator", float_format="%.6g")
     mor.to_csv(processed / "moran.csv", index=False, float_format="%.6g")
+    # The analysis table itself, without geometry (geometries come from the RBS source).
+    pd.DataFrame(ind.drop(columns="geom")).to_csv(
+        processed / "indicators.csv", index=False, float_format="%.6g"
+    )
     heatmap(t3, ROOT / params["paths"]["figures"] / "tier3_correlations.png")
     write_results(t1, rob, t3, mor, a, len(ind))
 
