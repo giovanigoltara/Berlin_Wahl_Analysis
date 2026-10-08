@@ -1,0 +1,68 @@
+cff-version: 1.2.0
+message: "If you use this code or its derived data, please cite it as below."
+type: software
+title: "Heat, green and the vote: Berlin 2026"
+abstract: >-
+  A reproducible PostGIS, Google Earth Engine and Python pipeline relating summer land surface
+  temperature, vegetation (NDVI) and access to everyday services to party-list results of the
+  Berlin Abgeordnetenhaus election of 20 September 2026, across 2,542 polling-station districts.
+  Postal votes are allocated to station districts, indicators are computed over residential land
+  (dasymetric), and correlations follow an analysis plan fixed before the satellite data existed.
+  Ecological and descriptive: results describe districts, not voters. Version 0.1 uses the
+  preliminary election results.
+authors:
+  - given-names: Giovani Bonadiman
+    family-names: Goltara
+    email: giovani.goltara@gmail.com
+version: 0.1-preliminary
+license: MIT
+repository-code: "https://github.com/giovanigoltara/Berlin_Wahl_Analysis"
+keywords:
+  - urban heat
+  - land surface temperature
+  - NDVI
+  - accessibility
+  - electoral geography
+  - dasymetric mapping
+  - PostGIS
+  - Google Earth Engine
+  - Berlin
+references:
+  - type: data
+    title: "Wahl zum Abgeordnetenhaus von Berlin 2026, Zweitstimmen nach Wahlbezirken (vorläufiges Ergebnis)"
+    authors:
+      - name: "Der Landeswahlleiter für Berlin"
+    url: "https://www.wahlen-berlin.de/wahlen/BE2026/Afspraes/AGH/downloads.html"
+  - type: data
+    title: "Geometrien der Wahlbezirke für die Wahl zum 20. Abgeordnetenhaus von Berlin und BVV 2026"
+    authors:
+      - name: "Amt für Statistik Berlin-Brandenburg"
+    url: "https://daten.berlin.de/datensaetze/geometrien-der-wahlbezirke-fur-die-wahl-zum-20-abgeordnetenhaus-von-berlin-und-bvv-2026"
+  - type: data
+    title: "Einwohnerdichte 2025 (Umweltatlas)"
+    authors:
+      - name: "Amt für Statistik Berlin-Brandenburg"
+    url: "https://daten.berlin.de/datensaetze/einwohnerdichte-2025-umweltatlas-wfs-b2654f6b"
+  - type: data
+    title: "OpenStreetMap Berlin extract, 2026-10-03"
+    authors:
+      - name: "OpenStreetMap contributors"
+      - name: "Geofabrik GmbH"
+    url: "https://download.geofabrik.de/europe/germany/berlin.html"
+    license: ODbL-1.0
+  - type: data
+    title: "Landsat 8 and 9 Collection 2 Level 2 Surface Temperature"
+    authors:
+      - name: "U.S. Geological Survey"
+    url: "https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC09_C02_T1_L2"
+  - type: data
+    title: "Copernicus Sentinel-2 Surface Reflectance (Harmonized)"
+    authors:
+      - name: "European Union, Copernicus Programme"
+    url: "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED"
+  - type: data
+    title: "Cloud Score+ S2_HARMONIZED V1"
+    authors:
+      - name: "Google"
+    url: "https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_CLOUD_SCORE_PLUS_V1_S2_HARMONIZED"
+    license: CC-BY-4.0
