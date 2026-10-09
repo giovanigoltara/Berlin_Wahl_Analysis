@@ -2,6 +2,24 @@
 
 [![CI](https://github.com/giovanigoltara/Berlin_Wahl_Analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/giovanigoltara/Berlin_Wahl_Analysis/actions/workflows/ci.yml)
 
+## In plain words
+
+**The question.** Berlin's dense inner city gets much hotter in summer than its leafy outskirts. Does that line up with how neighbourhoods vote? This project compares 2,542 polling districts, each about 1,000 voters, using only public data: election results, population, OpenStreetMap and satellite images.
+
+**What it found.**
+
+1. **Hotter, less green districts lean towards Die Linke and the Greens, cooler and greener ones towards the CDU and AfD,** and this holds even when comparing districts that are equally dense. The pattern is clear but moderate, with many exceptions.
+2. **Distance to schools, doctors and shops says almost nothing about the vote** once density is taken into account. In Berlin, access to everyday services mostly follows density.
+3. **The results do not change** with how the 41 % of postal votes are assigned to districts.
+
+**What it does not say.** These are patterns between places, not facts about people, and they are not causes: heat does not make anyone vote a certain way. Satellites measure surface temperature on clear summer mornings, not the air at night.
+
+**Why it can be trusted.** One command rebuilds every table and map from the public sources in about 4 minutes, and GitHub repeats that every week to confirm the results come out identical. The main tests were written down before the satellite data was computed.
+
+The rest of this page is the technical documentation.
+
+---
+
 How do surface temperature, vegetation and access to everyday services vary across Berlin's electoral districts, and how do these urban conditions align with party-list (Zweitstimme) results of the Abgeordnetenhaus election of 20 September 2026?
 
 This is an ecological, descriptive analysis of 2,542 polling-station districts. Results describe districts, not voters: a district with hotter surfaces and a higher Linke share says nothing about how any individual in it voted. The election results used are the **preliminary** results (release `v0.1-preliminary`).
