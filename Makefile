@@ -83,9 +83,10 @@ dictionary: analysis ## Phase 5: validate datapackage.json, render docs/data_dic
 
 all: maps dictionary ## Run the full pipeline
 
-check: ## Static checks: lint, formatting, parameters, data package, citation metadata
+check: ## Static checks and unit tests: lint, formatting, tests, parameters, data package, citation
 	uv run ruff check .
 	uv run ruff format --check .
+	uv run pytest -q
 	$(PY) -c "import yaml; yaml.safe_load(open('config/params.yaml'))"
 	uv run frictionless validate datapackage.json
 	uv run --with cffconvert==2.0.0 cffconvert --validate -i CITATION.cff
