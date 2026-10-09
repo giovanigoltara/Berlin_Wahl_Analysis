@@ -131,4 +131,6 @@ Working CRS is EPSG:25833 (ETRS89 / UTM zone 33N) for all metric operations.
 
 Danila Morkovkin's [dot-density map of the 2026 Berlin election](https://danilamorkovkin.blog/berlin-election-2026/) showed the results at fine resolution first. This project does not replicate it: it adds urban indicators, and it reconciles postal and station votes.
 
+Developed with Claude Code (Anthropic) as a coding assistant; the research question, data choices, analysis plan and interpretation are mine.
+
 To cite this work, see `CITATION.cff`. Code: MIT (`LICENSE`). Derived tables in `data/processed/`: ODbL 1.0, because they include values derived from OpenStreetMap. Source licences are listed in `docs/provenance.md`.
